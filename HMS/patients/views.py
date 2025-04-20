@@ -4,6 +4,9 @@ from django.contrib import messages
 from .models import Patient_register
 
 # Create your views here.
+def home(request):
+    patients = Patient_register.objects.all()
+    return render(request, 'patients/home.html', {'patients': patients})
 def pat_register(request):
     if request.method == 'POST':
         # Retrieve form data
@@ -19,7 +22,7 @@ def pat_register(request):
 
         # Check for duplicate patient
         if Patient_register.objects.filter(name=name, contact=contact).exists():
-            messages.error("Patient with this name and contact already exists.")
+            messages.error(request,"Patient with this name and contact already exists.")
             return render(request, 'patients/register.html')
 
         # Create and save the new patient
@@ -28,7 +31,7 @@ def pat_register(request):
 
         # Redirect or return success response
         messages.success(request, "Patient successfully registered.")
-        return HttpResponse("Patient succeffuly registered")  # Replace 'success_page' with your actual success URL
+        return redirect(home)  # Replace 'success_page' with your actual success URL
 
     # If GET request, render the registration form
     return render(request, 'patients/register.html')  # Replace with your actual template path
