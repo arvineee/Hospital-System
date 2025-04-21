@@ -1,0 +1,38 @@
+<!-- filepath: /workspaces/codespaces-blank/HMS/templates/patients/drug_issued.html -->
+{% extends 'base.html' %}
+
+{% block title %}Drugs Issued{% endblock %}
+
+{% block content %}
+<h1 class="text-center mb-4">Drugs Issued</h1>
+<div class="container">
+    {% if patient %}
+    <h3 class="mb-4">Drugs Administered to {{ patient.name }}</h3>
+    {% endif %}
+    {% if drug_issues %}
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th>Drug Name</th>
+                    <th>Quantity Issued</th>
+                    <th>Issue Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for issue in drug_issues %}
+                <tr>
+                    <td>{{ issue.drug.name }}</td>
+                    <td>{{ issue.quantity_issued }}</td>
+                    <td>{{ issue.issue_date }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="text-center">No drugs have been issued to this patient.</p>
+    {% endif %}
+    <a href="{% url 'all_patients' %}" class="btn btn-secondary mt-3">Back to Patients</a>
+</div>
+{% endblock %}

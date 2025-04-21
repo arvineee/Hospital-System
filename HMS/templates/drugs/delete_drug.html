@@ -1,0 +1,16 @@
+<!-- filepath: /workspaces/codespaces-blank/HMS/templates/drugs/delete_drug.html -->
+{% extends 'base.html' %}
+
+{% block title %}Delete Drug{% endblock %}
+
+{% block content %}
+<h1 class="text-center mb-4">Delete Drug</h1>
+<div class="container text-center">
+    <p>Are you sure you want to delete <strong>{{ drug.name }}</strong>?</p>
+    <form method="POST">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Yes, Delete</button>
+        <a href="{% url 'all_drugs' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,19 @@
+<!-- filepath: /workspaces/codespaces-blank/HMS/templates/drugs/stock_out_warning.html -->
+{% extends 'base.html' %}
+
+{% block title %}Stock Out Warning{% endblock %}
+
+{% block content %}
+<h1 class="text-center mb-4">Stock Out Warning</h1>
+<div class="container">
+    {% if out_of_stock_drugs %}
+    <ul class="list-group">
+        {% for drug in out_of_stock_drugs %}
+        <li class="list-group-item list-group-item-danger">{{ drug.name }} is out of stock.</li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-center">No drugs are out of stock.</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,34 @@
+<!-- filepath: /workspaces/codespaces-blank/HMS/templates/patients/update.html -->
+{% extends 'base.html' %}
+
+{% block title %}Update Patient{% endblock %}
+
+{% block content %}
+<h1 class="text-center mb-4">Update Patient Details</h1>
+<div class="container">
+    <form method="POST">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="name" class="form-label">Name:</label>
+            <input type="text" id="name" name="name" class="form-control" value="{{ patient.name }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="age" class="form-label">Age:</label>
+            <input type="number" id="age" name="age" class="form-control" value="{{ patient.age }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="contact" class="form-label">Contact:</label>
+            <input type="text" id="contact" name="contact" class="form-control" value="{{ patient.contact }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="sex" class="form-label">Sex:</label>
+            <select id="sex" name="sex" class="form-select" required>
+                <option value="Male" {% if patient.sex == "Male" %}selected{% endif %}>Male</option>
+                <option value="Female" {% if patient.sex == "Female" %}selected{% endif %}>Female</option>
+                <option value="Other" {% if patient.sex == "Other" %}selected{% endif %}>Other</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Update</button>
+    </form>
+</div>
+{% endblock %}

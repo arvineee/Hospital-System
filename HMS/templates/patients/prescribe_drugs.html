@@ -1,0 +1,68 @@
+<!-- filepath: /workspaces/codespaces-blank/HMS/templates/patients/prescribe_drugs.html -->
+{% extends 'base.html' %}
+
+{% block title %}Prescribe Drugs{% endblock %}
+
+{% block content %}
+<h1 class="text-center mb-4">Prescribe Drugs to {{ patient.name }}</h1>
+<div class="container">
+    <form method="POST">
+        {% csrf_token %}
+        <div id="drug-list">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="drug_ids_0" class="form-label">Select Drug:</label>
+                    <select id="drug_ids_0" name="drug_ids" class="form-select" required>
+                        <option value="">-- Select Drug --</option>
+                        {% for drug in drugs %}
+                        <option value="{{ drug.id }}">{{ drug.name }} ({{ drug.quantity }} available)</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="quantities_0" class="form-label">Quantity:</label>
+                    <input type="number" id="quantities_0" name="quantities" class="form-control" min="1" required>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="button" class="btn btn-success" onclick="addDrugRow()">Add</button>
+                </div>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Prescribe Drugs</button>
+    </form>
+</div>
+
+<script>
+    let drugRowIndex = 1;
+
+    function addDrugRow() {
+        const drugList = document.getElementById('drug-list');
+        const newRow = document.createElement('div');
+        newRow.className = 'row mb-3';
+        newRow.innerHTML = `
+            <div class="col-md-6">
+                <label for="drug_ids_${drugRowIndex}" class="form-label">Select Drug:</label>
+                <select id="drug_ids_${drugRowIndex}" name="drug_ids" class="form-select" required>
+                    <option value="">-- Select Drug --</option>
+                    {% for drug in drugs %}
+                    <option value="{{ drug.id }}">{{ drug.name }} ({{ drug.quantity }} available)</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="quantities_${drugRowIndex}" class="form-label">Quantity:</label>
+                <input type="number" id="quantities_${drugRowIndex}" name="quantities" class="form-control" min="1" required>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="button" class="btn btn-danger" onclick="removeDrugRow(this)">Remove</button>
+            </div>
+        `;
+        drugList.appendChild(newRow);
+        drugRowIndex++;
+    }
+
+    function removeDrugRow(button) {
+        button.parentElement.parentElement.remove();
+    }
+</script>
+{% endblock %}

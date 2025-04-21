@@ -1,0 +1,42 @@
+<!-- filepath: /workspaces/codespaces-blank/HMS/templates/drugs/search_drug.html -->
+{% extends 'base.html' %}
+
+{% block title %}Search Drugs{% endblock %}
+
+{% block content %}
+<h1 class="text-center mb-4">Search Drugs</h1>
+<div class="container">
+    <form method="POST">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="name" class="form-label">Drug Name:</label>
+            <input type="text" id="name" name="name" class="form-control" placeholder="Enter drug name" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Search</button>
+    </form>
+    {% if drugs %}
+    <div class="table-responsive mt-4">
+        <table class="table table-bordered table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th>Name</th>
+                    <th>Quantity</th>
+                    <th>Expiry Date</th>
+                    <th>Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for drug in drugs %}
+                <tr>
+                    <td>{{ drug.name }}</td>
+                    <td>{{ drug.quantity }}</td>
+                    <td>{{ drug.expiry_date }}</td>
+                    <td>${{ drug.price }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

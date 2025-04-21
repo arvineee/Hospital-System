@@ -1,0 +1,23 @@
+<!-- filepath: /workspaces/codespaces-blank/HMS/templates/patients/view.html -->
+{% extends 'base.html' %}
+
+{% block title %}View Patient{% endblock %}
+
+{% block content %}
+<h1 class="text-center mb-4">Patient Details</h1>
+<div class="container">
+    <ul class="list-group">
+        <li class="list-group-item"><strong>Patient IP:</strong>{{ patient.id }}</li>
+        <li class="list-group-item"><strong>Name:</strong>{{ patient.name }}</li>
+        <li class="list-group-item"><strong>Age:</strong> {{ patient.age }}</li>
+        <li class="list-group-item"><strong>Contact:</strong> {{ patient.contact }}</li>
+        <li class="list-group-item"><strong>Sex:</strong> {{ patient.sex }}</li>
+        <li class="list-group-item"><strong>Admission Date:</strong> {{ patient.adm_date }}</li>
+    </ul>
+    <a href="{% url 'all_patients' %}" class="btn btn-secondary mt-3">Patients</a>
+    <a href="{% url 'prescribe_drugs' patient.id %}" class="btn btn-primary mt-3">Prescribe Drugs</a>
+    <a href="{% url 'drug_issued' patient.id %}" class="btn btn-info mt-3">Issued Drugs</a>
+    <a href="{% url 'pat_update' patient.id %}" class="btn btn-success mt-3">Update</a>
+    <a href="{% url 'pat_delete' patient.id %}" class="btn btn-danger mt-3">Delete</a>
+</div>
+{% endblock %}

@@ -1,11 +1,12 @@
-<!-- filepath: /workspaces/codespaces-blank/HMS/templates/patients/home.html -->
+<!-- filepath: /workspaces/codespaces-blank/HMS/templates/patients/search_results.html -->
 {% extends 'base.html' %}
 
-{% block title %}Patient List{% endblock %}
+{% block title %}Search Results{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <h1 class="text-center mb-4">Registered Patients</h1>
+<h1 class="text-center mb-4">Search Results</h1>
+<div class="container">
+    {% if patients %}
     <div class="table-responsive">
         <table class="table table-bordered table-striped">
             <thead class="table-dark">
@@ -20,20 +21,18 @@
             <tbody>
                 {% for patient in patients %}
                 <tr>
-                    <!-- Link the patient's name to the pat_search view -->
-                    <td><a href="{% url 'pat_view' patient.id %}">{{ patient.name }}</a></td>
+                    <td>{{ patient.name }}</td>
                     <td>{{ patient.age }}</td>
                     <td>{{ patient.contact }}</td>
                     <td>{{ patient.sex }}</td>
                     <td>{{ patient.adm_date }}</td>
                 </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="5" class="text-center">No patients registered yet.</td>
-                </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+    {% else %}
+    <p class="text-center">No patients found matching your search criteria.</p>
+    {% endif %}
 </div>
 {% endblock %}

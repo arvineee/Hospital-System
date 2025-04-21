@@ -1,0 +1,27 @@
+<!-- filepath: /workspaces/codespaces-blank/HMS/templates/drugs/issue_drug.html -->
+{% extends 'base.html' %}
+
+{% block title %}Issue Drug{% endblock %}
+
+{% block content %}
+<h1 class="text-center mb-4">Issue Drug</h1>
+<div class="container">
+    <form method="POST">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="drug_id" class="form-label">Select Drug:</label>
+            <select id="drug_id" name="drug_id" class="form-select" required>
+                <option value="">-- Select Drug --</option>
+                {% for drug in drugs %}
+                <option value="{{ drug.id }}">{{ drug.name }} ({{ drug.quantity }} available)</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="quantity_issued" class="form-label">Quantity to Issue:</label>
+            <input type="number" id="quantity_issued" name="quantity_issued" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Issue Drug</button>
+    </form>
+</div>
+{% endblock %}
