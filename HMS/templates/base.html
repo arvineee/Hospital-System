@@ -38,7 +38,17 @@
                         <ul class="dropdown-menu" aria-labelledby="patientsDropdown">
                             <li><a class="dropdown-item" href="{% url 'all_patients' %}">View Patients</a></li>
                             <li><a class="dropdown-item" href="{% url 'pat_register' %}">Register Patient</a></li>
+                            <li><a class="dropdown-item" href="{% url 'add_drug' %}">Add New Drug</a></li>
                             
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="drugsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Drugs
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="drugsDropdown">
+                            <li><a class="dropdown-item" href="{% url 'add_drug' %}">Add New Drug</a></li>
+                            <li><a class="dropdown-item" href="{% url 'all_drugs' %}">View all Drugs</a></li>
                         </ul>
                     </li>
                 </ul>

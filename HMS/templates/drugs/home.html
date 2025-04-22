@@ -23,7 +23,7 @@
                     <td>{{ drug.name }}</td>
                     <td>{{ drug.quantity }}</td>
                     <td>{{ drug.expiry_date }}</td>
-                    <td>${{ drug.price }}</td>
+                    <td>ksh {{ drug.price }}</td>
                     <td>
                         <a href="{% url 'drug_update' drug.id %}" class="btn btn-success btn-sm">Update</a>
                         <a href="{% url 'drug_delete' drug.id %}" class="btn btn-danger btn-sm">Delete</a>

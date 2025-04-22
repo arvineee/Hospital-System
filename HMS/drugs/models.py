@@ -16,6 +16,7 @@ class DrugIssue(models.Model):
     patient = models.ForeignKey(Patient_register, on_delete=models.CASCADE)  # Foreign key to Patient_register
     quantity_issued = models.IntegerField()
     issue_date = models.DateField(auto_now_add=True)
+ 
 
     def __str__(self):
         return f"Issue of {self.drug.name} to {self.patient.name}"

@@ -16,6 +16,7 @@
                 <tr>
                     <th>Drug Name</th>
                     <th>Quantity Issued</th>
+                    <th> Price</th>
                     <th>Issue Date</th>
                 </tr>
             </thead>
@@ -24,6 +25,7 @@
                 <tr>
                     <td>{{ issue.drug.name }}</td>
                     <td>{{ issue.quantity_issued }}</td>
+                    <td>{{ issue.drug.price }}</td>
                     <td>{{ issue.issue_date }}</td>
                 </tr>
                 {% endfor %}

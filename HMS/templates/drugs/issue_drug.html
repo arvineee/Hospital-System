@@ -13,7 +13,7 @@
             <select id="drug_id" name="drug_id" class="form-select" required>
                 <option value="">-- Select Drug --</option>
                 {% for drug in drugs %}
-                <option value="{{ drug.id }}">{{ drug.name }} ({{ drug.quantity }} available)</option>
+                <option value="{{ drug.id }}">{{ drug.name }} ksh{{drug.price}} ({{ drug.quantity }} available)</option>
                 {% endfor %}
             </select>
         </div>
