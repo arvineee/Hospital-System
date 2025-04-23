@@ -1,0 +1,25 @@
+<!-- filepath: /workspaces/codespaces-blank/HMS/templates/home/landing.html -->
+{% extends 'base.html' %}
+
+{% block title %}Welcome{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    {% if request.user.is_authenticated %}
+    <!-- Content for logged-in users -->
+    <div class="text-center">
+        <h1 class="mb-4">Welcome Back, {{ request.user.first_name }}!</h1>
+        <p class="lead">Access your dashboard and manage the system.</p>
+        <a href="{% url 'dashboard' %}" class="btn btn-primary btn-lg">Go to Dashboard</a>
+    </div>
+    {% else %}
+    <!-- Content for unauthenticated users -->
+    <div class="text-center">
+        <h1 class="mb-4">Welcome to the Hospital Management System</h1>
+        <p class="lead">Please log in or register to access the system.</p>
+        <a href="{% url 'login' %}" class="btn btn-primary btn-lg me-3">Login</a>
+        <a href="{% url 'register' %}" class="btn btn-success btn-lg">Register</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

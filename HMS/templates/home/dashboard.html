@@ -1,0 +1,91 @@
+<!-- filepath: /workspaces/codespaces-blank/HMS/templates/home/dashboard.html -->
+{% extends 'base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="text-center mb-5">Hospital Management System Dashboard</h1>
+
+    <!-- Summary Cards -->
+    <div class="row text-center">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 text-white bg-primary mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Total Patients</h5>
+                    <p class="card-text display-4 fw-bold">{{ total_patients }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 text-white bg-success mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Total Drugs</h5>
+                    <p class="card-text display-4 fw-bold">{{ total_drugs }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 text-white bg-danger mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Drugs Issued</h5>
+                    <p class="card-text display-4 fw-bold">{{ total_drug_issues }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activities -->
+    <div class="row mt-5">
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Recent Patients</h5>
+                </div>
+                <ul class="list-group list-group-flush">
+                    {% for patient in recent_patients %}
+                    <li class="list-group-item">
+                        <strong>{{ patient.name }}</strong> - Admitted on {{ patient.adm_date }}
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item text-muted">No recent patients.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Recent Drug Issues</h5>
+                </div>
+                <ul class="list-group list-group-flush">
+                    {% for issue in recent_drug_issues %}
+                    <li class="list-group-item">
+                        <strong>{{ issue.drug.name }}</strong> issued to <strong>{{ issue.patient.name }}</strong> on {{ issue.issue_date }}
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item text-muted">No recent drug issues.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Links -->
+    <div class="row mt-5">
+        <div class="col-md-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">Quick Links</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'all_patients' %}" class="list-group-item list-group-item-action">View All Patients</a>
+                    <a href="{% url 'pat_register' %}" class="list-group-item list-group-item-action">Register a New Patient</a>
+                    <a href="{% url 'all_drugs' %}" class="list-group-item list-group-item-action">View All Drugs</a>
+                    <a href="{% url 'add_drug' %}" class="list-group-item list-group-item-action mb-5">Add a New Drug</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -15,7 +15,7 @@
         <li class="list-group-item"><strong>Admission Date:</strong> {{ patient.adm_date }}</li>
     </ul>
     <a href="{% url 'all_patients' %}" class="btn btn-secondary mt-3">Patients</a>
-    <a href="{% url 'prescribe_drugs' patient.id %}" class="btn btn-primary mt-3">PresPrescribecribe Drugs</a>
+    <a href="{% url 'prescribe_drugs' patient.id %}" class="btn btn-primary mt-3">Prescribe Drugs</a>
     <a href="{% url 'drug_issued' patient.id %}" class="btn btn-info mt-3">Issued Drugs</a>
     <a href="{% url 'pat_update' patient.id %}" class="btn btn-success mt-3">Update</a>
     <a href="{% url 'pat_delete' patient.id %}" class="btn btn-danger mt-3">Delete</a>
