@@ -4,7 +4,7 @@ const nextButton = document.querySelector('.next');
 const prevButton = document.querySelector('.prev');
 
 let index = 0;
-let isTransitioning = false;
+let isTransitioning = true;
 
 // Clone first and last images for seamless looping
 const firstClone = images[0].cloneNode(true);

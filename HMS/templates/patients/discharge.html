@@ -1,0 +1,24 @@
+<!-- filepath: /workspaces/codespaces-blank/HMS/templates/patients/discharge.html -->
+{% extends 'base.html' %}
+
+{% block title %}Discharge Patient{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="text-center">Discharge Patient</h2>
+    <hr>
+    <form method="POST">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="patientName" class="form-label">Patient Name</label>
+            <input type="text" class="form-control" id="patientName" value="{{ patient.name }}" readonly>
+        </div>
+        <div class="mb-3">
+            <label for="dischargeDate" class="form-label">Discharge Date</label>
+            <input type="date" class="form-control" id="dischargeDate" name="discharge_date" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Discharge</button>
+        <a href="{% url 'all_patients' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

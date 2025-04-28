@@ -3,6 +3,7 @@ from django.http import HttpResponse
 from django.contrib import messages
 from .models import Patient_register
 from drugs.models import Drug, DrugIssue 
+from datetime import datetime
 
 # Create your views here.
 def all_patients(request):
@@ -156,3 +157,24 @@ def drug_issue(request):
         except Drug.DoesNotExist:
             messages.error(request,"Drug does not exist.")
             return render(request, 'drugs/issue_drug.html')
+        
+def patient_discharge(request, id):
+    patient = Patient_register.objects.get(id=id)
+    if request.method == 'POST':
+        # Update the patient's discharge status
+        patient.is_discharged = True
+        patient.discharge_date = request.POST.get('discharge_date')
+        patient.save()
+        messages.success(request, "Patient successfully discharged.")
+        return redirect(all_patients)
+    return render(request, 'patients/discharge.html', {'patient': patient})
+
+def re_admit(request, id):
+    patient = Patient_register.objects.get(id=id)
+    # Update the patient's re-admission status
+    patient.is_discharged = False
+    patient.discharge_date = None
+    patient.adm_date = datetime.now().date()  
+    patient.save()
+    messages.success(request, "Patient successfully re-admitted.")
+    return redirect(all_patients)

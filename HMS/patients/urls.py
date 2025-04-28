@@ -13,4 +13,6 @@ urlpatterns = [
     path('prescribe_drugs/<int:id>/', views.prescribe_drugs, name='prescribe_drugs'),
     path("drug_issued/<int:id>/", views.drug_issued, name="drug_issued"),
     path("drug_issued/", views.drug_issued, name="drug_issued"),  
+    path("patient_discharge/<int:id>/", views.patient_discharge, name="patient_discharge"),
+    path("re_admit/<int:id>/", views.re_admit, name="re_admit"),
 ]
