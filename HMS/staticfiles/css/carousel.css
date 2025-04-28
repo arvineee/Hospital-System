@@ -1,0 +1,32 @@
+.carousel {
+    position: relative;
+    width: 400px;
+    overflow: hidden;
+    margin: auto;
+  }
+  
+  .carousel-track {
+    display: flex;
+    transition: transform 0.4s ease;
+  }
+  
+  .carousel-img {
+    width: 400px;
+    height: 250px;
+    object-fit: cover;
+  }
+  
+  .carousel-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0,0,0,0.5);
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+  }
+  
+  .prev { left: 10px; }
+  .next { right: 10px; }
+  
