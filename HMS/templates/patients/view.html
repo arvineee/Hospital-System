@@ -16,6 +16,8 @@
     </ul>
     <a href="{% url 'all_patients' %}" class="btn btn-secondary mt-3">Patients</a>
 
+    <a href="{% url 'patient_history' patient.id %}" class="btn btn-primary mt-3">Patient History</a>
+
     <a href="{% url 'drug_issued' patient.id %}" class="btn btn-info mt-3">Issued Drugs</a>
 
     {% if patient.is_discharged %}

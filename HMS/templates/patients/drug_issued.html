@@ -35,6 +35,6 @@
     {% else %}
     <p class="text-center">No drugs have been issued to this patient.</p>
     {% endif %}
-    <a href="{% url 'all_patients' %}" class="btn btn-secondary mt-3">Back to Patients</a>
+    <a href="{% url 'pat_view' patient.id %}" class="btn btn-secondary mt-3">Back to Patient</a>
 </div>
 {% endblock %}

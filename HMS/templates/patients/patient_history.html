@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block title %}Patient History - {{ patient.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h2>Patient Information</h2>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Name:</strong> {{ patient.name }}</p>
+                    <p><strong>IP NO:</strong> {{ patient.id }}</p>
+                    <p><strong>Age:</strong> {{ patient.age }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Sex:</strong> {{ patient.sex }}</p>
+                    <p><strong>Contact:</strong> {{ patient.contact }}</p>
+                    <p><strong>Admission Date:</strong> {{ patient.adm_date }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if user.is_authenticated and user.is_staff %}
+    {% if not  patient.is_discharged %}
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h3>Add New History Entry</h3>
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="diagnosis" class="form-label">Diagnosis</label>
+                    <input type="text" class="form-control" id="diagnosis" name="diagnosis" required>
+                </div>
+                <div class="mb-3">
+                    <label for="notes" class="form-label">Notes</label>
+                    <textarea class="form-control" id="notes" name="notes" rows="3" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Add History Entry</button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    <div class="card">
+        <div class="card-header bg-secondary text-white">
+            <h3>History Records</h3>
+        </div>
+        <div class="card-body">
+            {% if history %}
+                <div class="accordion" id="historyAccordion">
+                    {% for entry in history %}
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="heading{{ forloop.counter }}">
+                            <button class="accordion-button {% if not forloop.first %}collapsed{% endif %}" type="button" 
+                                    data-bs-toggle="collapse" data-bs-target="#collapse{{ forloop.counter }}" 
+                                    aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}" 
+                                    aria-controls="collapse{{ forloop.counter }}">
+                                {{ entry.date }} - {{ entry.diagnosis }}
+                            </button>
+                        </h2>
+                        <div id="collapse{{ forloop.counter }}" 
+                             class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" 
+                             aria-labelledby="heading{{ forloop.counter }}" 
+                             data-bs-parent="#historyAccordion">
+                            <div class="accordion-body">
+                                <p><strong>Doctor:</strong> {{ entry.doctor }}</p>
+                                <p><strong>Diagnosis:</strong> {{ entry.diagnosis }}</p>
+                                <p><strong>Notes:</strong></p>
+                                <p class="text-muted">{{ entry.notes|linebreaks }}</p>
+                                <p class="text-muted"><small>Added on: {{ entry.date }}</small></p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-center text-muted">No history records found.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="mt-4 mb-4">
+        <a href="{% url 'pat_view' patient.id %}" class="btn btn-secondary">Back to Patient Details</a>
+        {% if not patient.is_discharged %}
+            <a href="{% url 'prescribe_drugs' patient.id %}" class="btn btn-primary">Prescribe Drugs</a>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .accordion-button:not(.collapsed) {
+        background-color: #e7f1ff;
+    }
+    .card {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+</style>
+{% endblock %}

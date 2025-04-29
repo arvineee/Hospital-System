@@ -1,10 +1,12 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.contrib import messages
-from .models import Patient_register
+from .models import Patient_register, PatientHistory
 from drugs.models import DrugIssue
 from django.contrib.auth.decorators import login_required
 from drugs.models import Drug, DrugIssue 
+from django.contrib.auth.models import User
+
 from datetime import datetime
 
 
@@ -134,7 +136,7 @@ def prescribe_drugs(request, id):
 
         # Redirect or return success response
         messages.success(request, "Drugs successfully prescribed.")
-        return redirect(all_patients)  
+        return redirect(pat_view, id=id)  # Redirect to the patient's view page
 
     # If GET request, render the prescribe drugs form
     return render(request, 'patients/prescribe_drugs.html', {'patient': patient, 'drugs': drugs})
@@ -173,7 +175,7 @@ def patient_discharge(request, id):
         patient.discharge_date = request.POST.get('discharge_date')
         patient.save()
         messages.success(request, "Patient successfully discharged.")
-        return redirect(all_patients)
+        return redirect(pat_view, id=id)  # Redirect to the patient's view page
     return render(request, 'patients/discharge.html', {'patient': patient})
 
 def re_admit(request, id):
@@ -196,7 +198,7 @@ def re_admit(request, id):
         patient.save()
         
         messages.success(request, "Patient successfully re-admitted.")
-        return redirect('all_patients')
+        return redirect('pat_view', id=id)  # Redirect to the patient's view page
     
     except Patient_register.DoesNotExist:
         messages.error(request, "Patient not found.")
@@ -213,7 +215,7 @@ def billing(request, id):
         # Check if patient is already discharged
         if patient.is_discharged:
             messages.error(request, "Patient is already discharged and billed.")
-            return redirect('all_patients')
+            return redirect('pat_view', id=id)
 
         # Calculate billing period
         admission_date = patient.adm_date
@@ -250,6 +252,61 @@ def billing(request, id):
         }
 
         return render(request, 'patients/billing.html', context)
+
+    except Patient_register.DoesNotExist:
+        messages.error(request, "Patient not found.")
+        return redirect('all_patients')
+    except Exception as e:
+        messages.error(request, f"An error occurred: {str(e)}")
+        return redirect('all_patients')
+    
+
+def patient_history(request, id):
+    try:
+        patient = Patient_register.objects.get(id=id)
+        drugs = Drug.objects.all()
+        history = PatientHistory.objects.filter(patient=patient).order_by('-date')
+
+        if request.method == 'POST':
+            # Retrieve form data
+            diagnosis = request.POST.get('diagnosis')
+            notes = request.POST.get('notes')
+            doctor = request.user
+            # Validate required fields
+            if not all([diagnosis, notes, doctor]):
+                messages.error(request, "Diagnosis, notes, and doctor name are required.")
+                return render(request, 'patients/patient_history.html', {
+                    'patient': patient,
+                    'history': history,
+                    'doctor': doctor,
+                })
+
+            try:
+                # Create a new history record
+                history_entry = PatientHistory(
+                    patient=patient,
+                    diagnosis=diagnosis,
+                    notes=notes,
+                    doctor=doctor
+                )
+
+                history_entry.save()
+                messages.success(request, "Patient history successfully updated.")
+                return redirect('patient_history', id=id)
+
+            except Exception as e:
+                messages.error(request, f"Error saving history: {str(e)}")
+                return render(request, 'patients/patient_history.html', {
+                    'patient': patient,
+                    'history': history,
+                    'doctor': doctor,
+                })
+
+        # GET request - display history
+        return render(request, 'patients/patient_history.html', {
+            'patient': patient,
+            'history': history,
+        })
 
     except Patient_register.DoesNotExist:
         messages.error(request, "Patient not found.")
