@@ -20,3 +20,4 @@ class DrugIssue(models.Model):
 
     def __str__(self):
         return f"Issue of {self.drug.name} to {self.patient.name}"
+

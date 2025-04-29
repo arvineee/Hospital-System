@@ -13,19 +13,50 @@
                 <tr>
                     <th>Name</th>
                     <th>Age</th>
+                    <th>Ip NO:</th>
                     <th>Contact</th>
                     <th>Sex</th>
                     <th>Admission Date</th>
+                    <th>Discharged</th>
+                    <th>Discharge Date</th>
+                    {% if user.is_staff %}
+                    <th>Re Admit</th>
+                    {% endif %}
                 </tr>
             </thead>
             <tbody>
                 {% for patient in patients %}
                 <tr>
-                    <td>{{ patient.name }}</td>
+                    <!-- Link the patient's name to the pat_view view -->
+                    <td><a href="{% url 'pat_view' patient.id %}">{{ patient.name }}</a></td>
                     <td>{{ patient.age }}</td>
+                    <td>{{ patient.id }}</td>
                     <td>{{ patient.contact }}</td>
                     <td>{{ patient.sex }}</td>
                     <td>{{ patient.adm_date }}</td>
+                    <td>
+                        {% if patient.discharge_date %}
+                            <span class="text-success">Yes</span>
+                        {% else %}
+                            <span class="text-danger">No</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if patient.discharge_date %}
+                            {{ patient.discharge_date }}
+                        {% else %}
+                            <a href="{% url 'patient_discharge' patient.id %}" class="btn btn-warning">Discharge</a>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if user.is_staff %}
+                        {% if patient.is_discharged %}
+                            <a href="{% url 're_admit' patient.id %}" class="btn btn-primary">Re Admit</a>
+                        {% else %}
+                            <span class="text-secondary">Not Applicable</span>
+                        {% endif %}
+                        {% endif %}
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -35,4 +66,6 @@
     <p class="text-center">No patients found matching your search criteria.</p>
     {% endif %}
 </div>
+
+<a href="{% url 'all_patients' %}" class="btn btn-secondary mt-3">Back to Patients</a>
 {% endblock %}

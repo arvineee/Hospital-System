@@ -15,4 +15,5 @@ urlpatterns = [
     path("drug_issued/", views.drug_issued, name="drug_issued"),  
     path("patient_discharge/<int:id>/", views.patient_discharge, name="patient_discharge"),
     path("re_admit/<int:id>/", views.re_admit, name="re_admit"),
+    path("billing/<int:id>/", views.billing, name="billing"),
 ]

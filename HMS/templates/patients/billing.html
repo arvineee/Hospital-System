@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}Billing Details{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h2 class="mb-0">Patient Information</h2>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Name:</strong> {{ patient.name }}</p>
+                    <p><strong>IP NO:</strong> {{ patient.id }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Contact:</strong> {{ patient.contact }}</p>
+                    <p><strong>Admission Date:</strong> {{ patient.adm_date }}</p>
+                    <p><strong>Days Admitted:</strong> {{ bill.days_admitted }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h3 class="mb-0">Bill Details</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Description</th>
+                            <th class="text-end">Amount (KSH)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Consultation Charge</td>
+                            <td class="text-end">{{ bill.consultation_charge }}.00</td>
+                        </tr>
+                        <tr>
+                            <td>Room Charge ({{ bill.days_admitted }} days @ {{ bill.daily_room_rate }}/day)</td>
+                            <td class="text-end">{{ bill.room_charge }}.00</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h4 class="mt-4">Prescribed Medications</h4>
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead class="table-secondary">
+                        <tr>
+                            <th>Drug Name</th>
+                            <th>Quantity</th>
+                            <th>Price per Unit (KSH)</th>
+                            <th class="text-end">Total (KSH)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for issue in drug_issues %}
+                        <tr>
+                            <td>{{ issue.drug.name }}</td>
+                            <td>{{ issue.quantity_issued }}</td>
+                            <td class="text-end">{{ issue.drug.price }}.00</td>
+                            <td class="text-end">{{ issue.drug.price|multiply:issue.quantity_issued }}.00</td>
+                        </tr>
+                        {% endfor %}
+                        <tr class="table-info">
+                            <td colspan="3" class="text-end"><strong>Total Medication Charges:</strong></td>
+                            <td class="text-end"><strong>{{ bill.medication_charge }}.00</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card bg-light mt-4">
+                <div class="card-body">
+                    <table class="table table-borderless mb-0">
+                        <tr>
+                            <td><strong>Consultation Charge:</strong></td>
+                            <td class="text-end">{{ bill.consultation_charge }}.00</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Room Charges:</strong></td>
+                            <td class="text-end">{{ bill.room_charge }}.00</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Medication Charges:</strong></td>
+                            <td class="text-end">{{ bill.medication_charge }}.00</td>
+                        </tr>
+                        <tr class="table-dark">
+                            <td><h4 class="mb-0"><strong>Total Bill:</strong></h4></td>
+                            <td class="text-end"><h4 class="mb-0">KSH {{ bill.total }}.00</h4></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center mt-4 mb-5">
+        <a href="{% url 'all_patients' %}" class="btn btn-secondary me-2">Back to Patients</a>
+        <button onclick="window.print()" class="btn btn-primary">Print Bill</button>
+    </div>
+</div>
+
+<style>
+    @media print {
+        .btn { display: none; }
+        .card { border: 1px solid #dee2e6 !important; }
+        .text-white { color: black !important; }
+        .bg-primary, .bg-info, .table-dark { 
+            background-color: #f8f9fa !important;
+            color: black !important;
+        }
+    }
+</style>
+{% endblock %}

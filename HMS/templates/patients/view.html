@@ -15,10 +15,24 @@
         <li class="list-group-item"><strong>Admission Date:</strong> {{ patient.adm_date }}</li>
     </ul>
     <a href="{% url 'all_patients' %}" class="btn btn-secondary mt-3">Patients</a>
-    <a href="{% url 'prescribe_drugs' patient.id %}" class="btn btn-primary mt-3">Prescribe Drugs</a>
+
     <a href="{% url 'drug_issued' patient.id %}" class="btn btn-info mt-3">Issued Drugs</a>
+
+    {% if patient.is_discharged %}
+    <a href="{% url 're_admit' patient.id %}" class="btn btn-warning mt-3">Re Admit</a>
+    {% else %}
     <a href="{% url 'patient_discharge' patient.id %}" class="btn btn-warning mt-3">Discharge</a>
-    <a href="{% url 'pat_update' patient.id %}" class="btn btn-success mt-3">Update</a>
+    {% endif %}
+    {% if user.is_staff%}
     <a href="{% url 'pat_delete' patient.id %}" class="btn btn-danger mt-3">Delete</a>
+    {% endif %}
+    {% if patient.is_discharged %}
+    <div class="alert alert-success mt-3" role="alert">
+        This patient has been discharged.
+    </div>
+    {% else %}
+    <a href="{% url 'prescribe_drugs' patient.id %}" class="btn btn-primary mt-3">Prescribe Drugs</a>
+    <a href="{% url 'billing' patient.id %}" class="btn btn-dark mt-3">Billing</a>
+    {% endif %}
 </div>
 {% endblock %}

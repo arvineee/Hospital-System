@@ -6,6 +6,15 @@
 {% block content %}
 <div class="container mt-5">
     <h1 class="text-center mb-4">Registered Patients</h1>
+
+    <!-- Search Form -->
+    <form method="GET" action="{% url 'pat_search' %}" class="mb-4">
+        <div class="input-group">
+            <input type="text" name="name" class="form-control" placeholder="Search patient by name" required>
+            <button type="submit" class="btn btn-primary">Search</button>
+        </div>
+    </form>
+
     <div class="table-responsive">
         <table class="table table-bordered table-striped">
             <thead class="table-dark">
@@ -18,13 +27,15 @@
                     <th>Admission Date</th>
                     <th>Discharged</th>
                     <th>Discharge Date</th>
+                    {% if user.is_staff %}
                     <th>Re Admit</th>
+                    {% endif %}
                 </tr>
             </thead>
             <tbody>
                 {% for patient in patients %}
                 <tr>
-                    <!-- Link the patient's name to the pat_search view -->
+                    <!-- Link the patient's name to the pat_view view -->
                     <td><a href="{% url 'pat_view' patient.id %}">{{ patient.name }}</a></td>
                     <td>{{ patient.age }}</td>
                     <td>{{ patient.id }}</td>
@@ -46,16 +57,18 @@
                         {% endif %}
                     </td>
                     <td>
-                        {% if patient.is_discharged%}
+                        {% if user.is_staff %}
+                        {% if patient.is_discharged %}
                             <a href="{% url 're_admit' patient.id %}" class="btn btn-primary">Re Admit</a>
                         {% else %}
                             <span class="text-secondary">Not Applicable</span>
                         {% endif %}
-                    
+                        {% endif %}
+                    </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="5" class="text-center">No patients registered yet.</td>
+                    <td colspan="9" class="text-center">No patients registered yet.</td>
                 </tr>
                 {% endfor %}
             </tbody>

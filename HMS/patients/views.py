@@ -2,8 +2,11 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.contrib import messages
 from .models import Patient_register
+from drugs.models import DrugIssue
+from django.contrib.auth.decorators import login_required
 from drugs.models import Drug, DrugIssue 
 from datetime import datetime
+
 
 # Create your views here.
 def all_patients(request):
@@ -74,18 +77,22 @@ def pat_delete(request, id):
         return redirect(all_patients)
     # If GET request, render the delete confirmation page
     return render(request, 'patients/delete.html', {'patient': patient})  
-def pat_search(request, name=None):
+def pat_search(request):
+    name = request.GET.get('name', '').strip()  # Get the 'name' parameter from the request
     if name:
-        # Perform a case-insensitive search and strip extra spaces
-        patients = Patient_register.objects.filter(name__iexact=name.strip())
+        # Perform a case-insensitive search
+        patients = Patient_register.objects.filter(name__icontains=name)
         if patients.exists():
             return render(request, 'patients/search_results.html', {'patients': patients})
         else:
             messages.error(request, "No patient found with the given name.")
-            return redirect(all_patients)
+            return redirect('all_patients')  # Redirect to the patient list if no results are found
+    else:
+        messages.error(request, "Please enter a name to search.")
+        return redirect('all_patients')  # Redirect to the patient list if no name is provided 
     
 def pat_view(request, id):
-    patient = Patient_register.objects.get(id=id)
+    patient = Patient_register.objects.filter(id=id).order_by('-id').first()
     return render(request, 'patients/view.html', {'patient': patient}) 
 
 
@@ -170,11 +177,83 @@ def patient_discharge(request, id):
     return render(request, 'patients/discharge.html', {'patient': patient})
 
 def re_admit(request, id):
-    patient = Patient_register.objects.get(id=id)
-    # Update the patient's re-admission status
-    patient.is_discharged = False
-    patient.discharge_date = None
-    patient.adm_date = datetime.now().date()  
-    patient.save()
-    messages.success(request, "Patient successfully re-admitted.")
-    return redirect(all_patients)
+    try:
+        patient = Patient_register.objects.get(id=id)
+        
+        # Check if patient is already admitted
+        if not patient.is_discharged:
+            messages.error(request, "Patient is already admitted.")
+            return redirect('all_patients')
+        
+        # Update the patient's re-admission status
+        patient.is_discharged = False
+        patient.discharge_date = None
+        patient.adm_date = datetime.now().date()
+        
+        # Clear previous drug issues for this patient
+        DrugIssue.objects.filter(patient=patient).delete()
+        
+        patient.save()
+        
+        messages.success(request, "Patient successfully re-admitted.")
+        return redirect('all_patients')
+    
+    except Patient_register.DoesNotExist:
+        messages.error(request, "Patient not found.")
+        return redirect('all_patients')
+    except Exception as e:
+        messages.error(request, f"An error occurred: {str(e)}")
+        return redirect('all_patients')
+
+def billing(request, id):
+    try:
+        patient = Patient_register.objects.get(id=id)
+        drug_issues = DrugIssue.objects.filter(patient=patient)
+
+        # Check if patient is already discharged
+        if patient.is_discharged:
+            messages.error(request, "Patient is already discharged and billed.")
+            return redirect('all_patients')
+
+        # Calculate billing period
+        admission_date = patient.adm_date
+        current_date = datetime.now().date()
+        days_admitted = (current_date - admission_date).days or 1  # Minimum 1 day
+
+        # Define charges
+        consultation_charge = 500
+        daily_room_charge = 100
+        total_room_charge = daily_room_charge * days_admitted
+
+        # Calculate medication charges
+        medication_total = sum(
+            issue.drug.price * issue.quantity_issued 
+            for issue in drug_issues
+        )
+
+        # Calculate total bill
+        total_bill = {
+            'consultation_charge': consultation_charge,
+            'room_charge': total_room_charge,
+            'medication_charge': medication_total,
+            'days_admitted': days_admitted,
+            'daily_room_rate': daily_room_charge,
+            'total': consultation_charge + total_room_charge + medication_total
+        }
+
+        context = {
+            'patient': patient,
+            'drug_issues': drug_issues,
+            'bill': total_bill,
+            'admission_date': admission_date,
+            'current_date': current_date,
+        }
+
+        return render(request, 'patients/billing.html', context)
+
+    except Patient_register.DoesNotExist:
+        messages.error(request, "Patient not found.")
+        return redirect('all_patients')
+    except Exception as e:
+        messages.error(request, f"An error occurred: {str(e)}")
+        return redirect('all_patients')
