@@ -23,6 +23,7 @@ def pat_register(request):
         name = request.POST.get('name')
         age = request.POST.get('age')
         contact = request.POST.get('contact')
+        ward = request.POST.get('ward')
         sex = request.POST.get('sex')
 
         # Validate required fields
