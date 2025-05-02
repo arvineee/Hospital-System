@@ -18,62 +18,110 @@ def all_patients(request):
     patients = Patient_register.objects.all()
     return render(request, 'patients/home.html', {'patients': patients})
 def pat_register(request):
-    if request.method == 'POST':
-        # Retrieve form data
-        name = request.POST.get('name')
-        age = request.POST.get('age')
-        contact = request.POST.get('contact')
-        ward = request.POST.get('ward')
-        sex = request.POST.get('sex')
+    try:
+        if request.method == 'POST':
+            # Retrieve form data
+            name = request.POST.get('name', '').strip()
+            age = request.POST.get('age')
+            contact = request.POST.get('contact')
+            ward = request.POST.get('ward')
+            sex = request.POST.get('sex')
 
-        # Validate required fields
-        if not all([name, age, contact, sex]):
-            messages.error(request,"All fields are required.")
-            return render(request, 'patients/register.html')
+            # Validate required fields
+            if not all([name, age, contact, sex]):
+                messages.error(request, "All fields are required.")
+                return render(request, 'patients/register.html')
 
-        # Check for duplicate patient
-        if Patient_register.objects.filter(name=name, contact=contact).exists():
-            messages.error(request,"Patient with this name and contact already exists.")
-            return render(request, 'patients/register.html')
+            # Validate age and contact
+            try:
+                age = int(age)
+                contact = int(contact)
+                if age <= 0 or age > 150:
+                    messages.error(request, "Please enter a valid age.")
+                    return render(request, 'patients/register.html')
+            except ValueError:
+                messages.error(request, "Age and contact must be valid numbers.")
+                return render(request, 'patients/register.html')
 
-        # Create and save the new patient
-        new_patient = Patient_register(name=name, age=age, contact=contact, sex=sex)
-        new_patient.save()
+            # Check for duplicate patient
+            if Patient_register.objects.filter(name=name, contact=contact).exists():
+                messages.error(request, "Patient with this name and contact already exists.")
+                return render(request, 'patients/register.html')
 
-        # Redirect or return success response
-        messages.success(request, "Patient successfully registered.")
-        return redirect(all_patients)  # Replace 'success_page' with your actual success URL
+            # Create and save the new patient
+            new_patient = Patient_register(
+                name=name,
+                age=age,
+                contact=contact,
+                ward=ward,
+                sex=sex,
+                adm_date=datetime.now().date()
+            )
+            new_patient.save()
 
-    # If GET request, render the registration form
-    return render(request, 'patients/register.html')  # Replace with your actual template path
+            messages.success(request, f"Patient {name} successfully registered.")
+            return redirect('pat_view', id=new_patient.id)
+
+        # If GET request, render the registration form
+        return render(request, 'patients/register.html')
+
+    except Exception as e:
+        messages.error(request, f"An error occurred: {str(e)}")
+        return render(request, 'patients/register.html')
 
 def pat_update(request, id):
-    patient = Patient_register.objects.get(id=id)
-    if request.method == 'POST':
-        # Retrieve form data
-        name = request.POST.get('name')
-        age = request.POST.get('age')
-        contact = request.POST.get('contact')
-        sex = request.POST.get('sex')
-        # Validate required fields
-        if not all([name, age, contact,sex]):
-            messages.error(request,"All fields are required.")
-            return render(request, 'patients/update.html', {'patient': patient})
-        # Check for duplicate patient
-        if Patient_register.objects.filter(name=name, contact=contact).exclude(id=id).exists():
-            messages.error(request,"Patient with this name and contact already exists.")
-            return render(request, 'patients/update.html', {'patient': patient})
-        # Update the patient details
-        patient.name = name
-        patient.age = age
-        patient.contact = contact 
-        patient.sex = sex   
-        patient.save()
-        # Redirect or return success response
-        messages.success(request, "Patient details successfully updated.")
-        return redirect(all_patients)
-    # If GET request, render the update form with existing patient data
-    return render(request, 'patients/update.html', {'patient': patient})  
+    try:
+        patient = get_object_or_404(Patient_register, id=id)
+        
+        if request.method == 'POST':
+            # Retrieve form data
+            name = request.POST.get('name', '').strip()
+            age = request.POST.get('age')
+            contact = request.POST.get('contact')
+            sex = request.POST.get('sex')
+            ward = request.POST.get('ward')
+
+            # Validate required fields
+            if not all([name, age, contact, sex]):
+                messages.error(request, "All fields are required.")
+                return render(request, 'patients/update.html', {'patient': patient})
+
+            # Validate age and contact
+            try:
+                age = int(age)
+                contact = int(contact)
+                if age <= 0 or age > 150:
+                    messages.error(request, "Please enter a valid age.")
+                    return render(request, 'patients/update.html', {'patient': patient})
+            except ValueError:
+                messages.error(request, "Age and contact must be valid numbers.")
+                return render(request, 'patients/update.html', {'patient': patient})
+
+            # Check for duplicate patient
+            if Patient_register.objects.filter(name=name, contact=contact).exclude(id=id).exists():
+                messages.error(request, "Patient with this name and contact already exists.")
+                return render(request, 'patients/update.html', {'patient': patient})
+
+            # Update the patient details
+            patient.name = name
+            patient.age = age
+            patient.contact = contact
+            patient.sex = sex
+            patient.ward = ward
+            patient.save()
+
+            messages.success(request, f"Patient {name}'s details successfully updated.")
+            return redirect('pat_view', id=patient.id)
+
+        # If GET request, render the update form with existing patient data
+        return render(request, 'patients/update.html', {'patient': patient})
+
+    except Patient_register.DoesNotExist:
+        messages.error(request, "Patient not found.")
+        return redirect('all_patients')
+    except Exception as e:
+        messages.error(request, f"An error occurred: {str(e)}")
+        return render(request, 'patients/update.html', {'patient': patient})
 def pat_delete(request, id):
     patient = Patient_register.objects.get(id=id)
     if request.method == 'POST':
