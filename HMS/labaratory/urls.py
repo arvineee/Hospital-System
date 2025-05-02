@@ -1,0 +1,58 @@
+from django.urls import path
+from .views import (
+    labaratory_create,
+    add_test_result,
+    labaratory_list,
+    labaratory_detail,
+    labaratory_test_list,
+    labaratory_test_create,
+    labaratory_test_detail,
+    labaratory_test_update,
+    labaratory_test_delete,
+    labaratory_test_result_list,
+    labaratory_test_result_detail,
+    labaratory_appointment_list,
+    labaratory_appointment_create,
+    labaratory_appointment_detail,
+    labaratory_appointment_update,
+    labaratory_appointment_delete,
+    labaratory_test_result_update
+)
+
+urlpatterns = [
+    path('patient/<int:patient_id>/results/', labaratory_test_result_list, name='patient_test_results'),
+    path('labaratories/', labaratory_list, name='labaratory_list'),
+    path('labaratories/<int:labaratory_id>/', labaratory_detail, name='labaratory_detail'),
+    path('labaratories/<int:labaratory_id>/tests/', labaratory_test_list, name='labaratory_test_list'),
+    path('labaratories/<int:labaratory_id>/tests/create/', labaratory_test_create, name='labaratory_test_create'),
+    path('labaratories/<int:labaratory_id>/tests/<int:test_id>/', labaratory_test_detail, name='labaratory_test_detail'),
+    path('labaratories/<int:labaratory_id>/tests/<int:test_id>/update/', labaratory_test_update, name='labaratory_test_update'),
+    path('labaratories/<int:labaratory_id>/tests/<int:test_id>/delete/', labaratory_test_delete, name='labaratory_test_delete'),
+    path('labaratories/<int:labaratory_id>/tests/<int:test_id>/results/', labaratory_test_result_list, name='labaratory_test_result_list'),
+    path('labaratories/<int:labaratory_id>/tests/<int:test_id>/results/<int:result_id>/', labaratory_test_result_detail, name='labaratory_test_result_detail'),
+    path('labaratories/<int:labaratory_id>/appointments/', labaratory_appointment_list, name='labaratory_appointment_list'),
+    path('labaratories/<int:labaratory_id>/appointments/create/', labaratory_appointment_create, name='labaratory_appointment_create'),
+    path('labaratories/<int:labaratory_id>/appointments/<int:appointment_id>/', labaratory_appointment_detail, name='labaratory_appointment_detail'),
+    path('labaratories/<int:labaratory_id>/appointments/<int:appointment_id>/update/', labaratory_appointment_update, name='labaratory_appointment_update'),
+    path('labaratories/<int:labaratory_id>/appointments/<int:appointment_id>/delete/', labaratory_appointment_delete, name='labaratory_appointment_delete'),
+    path('labaratories/create/', labaratory_create, name='labaratory_create'),
+    path('labaratories/<int:labaratory_id>/add_test_result/', add_test_result, name='add_test_result'),
+    path('patient/<int:patient_id>/results/',  labaratory_test_result_list, 
+         name='patient_test_results'),
+    
+    path('labaratories/<int:labaratory_id>/tests/<int:test_id>/results/',  labaratory_test_result_list, 
+         name='labaratory_test_result_list'),
+     path('labaratories/<int:labaratory_id>/tests/', labaratory_test_list, name='labaratory_test_list'),
+    path('test/<int:test_id>/result/add/', add_test_result, name='add_test_result'),
+    path('test/<int:test_id>/patient/<int:patient_id>/result/add/', 
+         add_test_result, 
+         name='add_test_result'),
+    path('labaratories/<int:labaratory_id>/appointments/create/', 
+         labaratory_appointment_create, 
+         name='labaratory_appointment_create'),
+     path('labaratories/<int:labaratory_id>/tests/<int:test_id>/results/<int:result_id>/update/',
+         labaratory_test_result_update,
+         name='labaratory_test_result_update'),
+   
+   
+]

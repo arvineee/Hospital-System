@@ -31,6 +31,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    "labaratory",
     "accounts",
     "patients",
     "drugs",

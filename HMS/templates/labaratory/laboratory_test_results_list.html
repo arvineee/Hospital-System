@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Test Results - {{ test.test_name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Results for {{ test.test_name }}</h2>
+    
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th>Patient Name</th>
+                    <th>Test Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for result in results %}
+                <tr>
+                    <td>{{ result.patient_name }}</td>
+                    <td>{{ result.test_date }}</td>
+                    <td>
+                        <a href="{% url 'labaratory_test_result_detail' labaratory.id test.id result.id %}" 
+                           class="btn btn-info btn-sm">View Details</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" class="text-center">No results found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <a href="{% url 'labaratory_test_detail' labaratory.id test.id %}" class="btn btn-secondary">Back to Test</a>
+</div>
+{% endblock %}

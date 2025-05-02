@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}New Test{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h2>Add New Test</h2>
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="test_name" class="form-label">Test Name</label>
+                    <input type="text" class="form-control" id="test_name" name="test_name" required>
+                </div>
+                <div class="mb-3">
+                    <label for="test_description" class="form-label">Description</label>
+                    <textarea class="form-control" id="test_description" name="test_description" rows="3" required></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="test_price" class="form-label">Price (KSH)</label>
+                    <input type="number" step="0.01" class="form-control" id="test_price" name="test_price" required>
+                </div>
+                <div class="mb-3">
+                    <label for="test_duration" class="form-label">Duration</label>
+                    <input type="text" class="form-control" id="test_duration" name="test_duration" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Test</button>
+                <a href="{% url 'labaratory_test_list' labaratory.id %}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

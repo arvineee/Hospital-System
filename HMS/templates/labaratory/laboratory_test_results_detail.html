@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block title %}Test Result Detail - {{ result.labaratory_test.test_name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-header bg-info text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="mb-0">Test Result Details</h2>
+                <span class="badge bg-{{ result.status|lower }} fs-5">{{ result.status }}</span>
+            </div>
+        </div>
+        
+        <div class="card-body">
+            <!-- Test Information -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h4>Test Information</h4>
+                    <div class="list-group">
+                        <div class="list-group-item">
+                            <h6 class="mb-1">Test Name</h6>
+                            <p class="mb-0">{{ result.labaratory_test.test_name }}</p>
+                        </div>
+                        <div class="list-group-item">
+                            <h6 class="mb-1">Laboratory</h6>
+                            <p class="mb-0">{{ result.labaratory_test.labaratory.labaratory_name }}</p>
+                        </div>
+                        <div class="list-group-item">
+                            <h6 class="mb-1">Test Date</h6>
+                            <p class="mb-0">{{ result.test_date|date:"F d, Y H:i" }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <h4>Patient Information</h4>
+                    <div class="list-group">
+                        <div class="list-group-item">
+                            <h6 class="mb-1">Patient Name</h6>
+                            <p class="mb-0">{{ result.patient.name }}</p>
+                        </div>
+                        <div class="list-group-item">
+                            <h6 class="mb-1">Patient ID</h6>
+                            <p class="mb-0">{{ result.patient.id }}</p>
+                        </div>
+                        <div class="list-group-item">
+                            <h6 class="mb-1">Age</h6>
+                            <p class="mb-0">{{ result.patient.age }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Test Results -->
+            <div class="mb-4">
+                <h4>Test Results</h4>
+                <div class="card">
+                    <div class="card-body bg-light">
+                        <pre class="mb-0">{{ result.test_result }}</pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Notes -->
+            {% if result.notes %}
+            <div class="mb-4">
+                <h4>Additional Notes</h4>
+                <div class="card">
+                    <div class="card-body bg-light">
+                        {{ result.notes|linebreaks }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Action Buttons -->
+            <div class="mt-4">
+                <div class="btn-group" role="group">
+                    <a href="{% url 'patient_test_results' result.patient.id %}" 
+                       class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Results
+                    </a>
+                    {% if result.status != 'Completed' %}
+                    <a href="{% url 'labaratory_test_result_update' result.labaratory_test.labaratory.id result.labaratory_test.id result.id %}" 
+                       class="btn btn-primary">
+                        <i class="fas fa-edit"></i> Edit Result
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'pat_view' result.patient.id %}" 
+                       class="btn btn-info">
+                        <i class="fas fa-user"></i> Patient Profile
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    pre {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 0.25rem;
+        font-size: 0.9rem;
+    }
+    .badge {
+        padding: 0.5em 1em;
+    }
+    .badge.bg-completed {
+        background-color: #198754;
+    }
+    .badge.bg-pending {
+        background-color: #ffc107;
+    }
+    .badge.bg-in.progress {
+        background-color: #0dcaf0;
+    }
+</style>
+{% endblock %}

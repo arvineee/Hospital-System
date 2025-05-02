@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block title %}Laboratory List{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Laboratories</h2>
+    <div class="row">
+        {% for lab in labaratories %}
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ lab.labaratory_name }}</h5>
+                    <p class="card-text">{{ lab.labaratory_description|truncatewords:30 }}</p>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'labaratory_detail' lab.id %}" class="btn btn-primary">View Details</a>
+                        <a href="{% url 'labaratory_test_list' lab.id %}" class="btn btn-info">View Tests</a>
+                        <a href="{% url 'labaratory_appointment_list' lab.id %}" class="btn btn-success">Appointments</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <p class="text-center">No laboratories found.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

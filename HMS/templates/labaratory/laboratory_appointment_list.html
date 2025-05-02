@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Appointments - {{ labaratory.labaratory_name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Laboratory Appointments</h2>
+    
+    <a href="{% url 'labaratory_appointment_create' labaratory.id %}" class="btn btn-primary mb-3">New Appointment</a>
+    
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th>Patient Name</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for appointment in appointments %}
+                <tr>
+                    <td>{{ appointment.patient_name }}</td>
+                    <td>{{ appointment.appointment_date }}</td>
+                    <td>{{ appointment.appointment_time }}</td>
+                    <td>
+                        <a href="{% url 'labaratory_appointment_detail' labaratory.id appointment.id %}" 
+                           class="btn btn-info btn-sm">View</a>
+                        <a href="{% url 'labaratory_appointment_update' labaratory.id appointment.id %}" 
+                           class="btn btn-warning btn-sm">Edit</a>
+                        <a href="{% url 'labaratory_appointment_delete' labaratory.id appointment.id %}" 
+                           class="btn btn-danger btn-sm">Delete</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center">No appointments found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <a href="{% url 'labaratory_detail' labaratory.id %}" class="btn btn-secondary">Back to Laboratory</a>
+</div>
+{% endblock %}

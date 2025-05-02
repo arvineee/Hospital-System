@@ -26,4 +26,5 @@ urlpatterns = [
     path("drugs/",include("drugs.urls")),
     path("accounts/",include("accounts.urls")),
     path("",include("home.urls")),
+    path("labaratory/",include("labaratory.urls")),
 ] +static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

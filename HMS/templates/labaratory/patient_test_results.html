@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+
+{% block title %}Test Results - {{ patient.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-header bg-info text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="mb-0">Laboratory Test Results</h2>
+                {% if available_tests %}
+                <div class="dropdown">
+                    <button class="btn btn-light dropdown-toggle" type="button" 
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-plus"></i> Add New Result
+                    </button>
+                    <ul class="dropdown-menu">
+                        {% for test in available_tests %}
+                        <li>
+                            <a class="dropdown-item" 
+                               href="{% url 'add_test_result' test.id patient.id %}">
+                                {{ test.test_name }} - {{ test.labaratory.labaratory_name }}
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="patient-info mb-4">
+                <h4>Patient Information</h4>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Name:</strong> {{ patient.name }}</p>
+                        <p><strong>Patient ID:</strong> {{ patient.id }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Age:</strong> {{ patient.age }}</p>
+                        <p><strong>Gender:</strong> {{ patient.sex }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            {% if results %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Test Name</th>
+                                <th>Laboratory</th>
+                                <th>Date</th>
+                                <th>Result</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for result in results %}
+                            <tr>
+                                <td>{{ result.labaratory_test.test_name }}</td>
+                                <td>{{ result.labaratory_test.labaratory.labaratory_name }}</td>
+                                <td>{{ result.test_date|date:"Y-m-d H:i" }}</td>
+                                <td>
+                                    {% if result.test_result|length > 50 %}
+                                        {{ result.test_result|truncatechars:50 }}
+                                    {% else %}
+                                        {{ result.test_result }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge {% if result.status == 'Completed' %}bg-success{% else %}bg-warning{% endif %}">
+                                        {{ result.status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'labaratory_test_result_detail' result.labaratory_test.labaratory.id result.labaratory_test.id result.id %}" 
+                                           class="btn btn-info btn-sm">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                        {% if result.status != 'Completed' %}
+                                        <a href="{% url 'labaratory_test_result_update' result.labaratory_test.labaratory.id result.labaratory_test.id result.id %}" 
+                                           class="btn btn-warning btn-sm">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> No test results found for this patient.
+                </div>
+            {% endif %}
+            
+           
+<div class="mt-4">
+    <div class="btn-group" role="group">
+        <a href="{% url 'pat_view' patient.id %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Patient
+        </a>
+        
+        {% if not patient.is_discharged and available_tests %}
+        <div class="dropdown">
+            <button class="btn btn-primary dropdown-toggle" type="button" 
+                    data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-calendar-plus"></i> Schedule New Test
+            </button>
+            <ul class="dropdown-menu">
+                {% for test in available_tests %}
+                <li>
+                    <a class="dropdown-item" 
+                       href="{% url 'labaratory_appointment_create' test.labaratory.id %}?patient_id={{ patient.id }}">
+                        {{ test.labaratory.labaratory_name }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .badge {
+        font-size: 0.9em;
+        padding: 0.5em 0.7em;
+    }
+    .patient-info {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 0.25rem;
+    }
+    .table td {
+        vertical-align: middle;
+    }
+</style>
+{% endblock %}

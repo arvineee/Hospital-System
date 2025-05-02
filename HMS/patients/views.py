@@ -6,6 +6,8 @@ from drugs.models import DrugIssue
 from django.contrib.auth.decorators import login_required
 from drugs.models import Drug, DrugIssue 
 from django.contrib.auth.models import User
+from django.shortcuts import get_object_or_404
+from labaratory.models import Labaratory
 
 from datetime import datetime
 
@@ -94,9 +96,12 @@ def pat_search(request):
         return redirect('all_patients')  # Redirect to the patient list if no name is provided 
     
 def pat_view(request, id):
-    patient = Patient_register.objects.filter(id=id).order_by('-id').first()
-    return render(request, 'patients/view.html', {'patient': patient}) 
-
+    patient = get_object_or_404(Patient_register, id=id)
+    labaratories = Labaratory.objects.all()
+    return render(request, 'patients/view.html', {
+        'patient': patient,
+        'labaratories': labaratories
+    })
 
 def prescribe_drugs(request, id):
     patient = Patient_register.objects.get(id=id)

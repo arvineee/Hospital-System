@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ labaratory.labaratory_name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h2>{{ labaratory.labaratory_name }}</h2>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Location:</strong> {{ labaratory.labaratory_location }}</p>
+                    <p><strong>Phone:</strong> {{ labaratory.labaratory_phone }}</p>
+                    <p><strong>Email:</strong> {{ labaratory.labaratory_email }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Website:</strong> <a href="{{ labaratory.labaratory_website }}">Visit Website</a></p>
+                    <p><strong>Description:</strong></p>
+                    <p>{{ labaratory.labaratory_description }}</p>
+                </div>
+            </div>
+            <div class="mt-4">
+                <a href="{% url 'labaratory_test_list' labaratory.id %}" class="btn btn-primary">View Tests</a>
+                <a href="{% url 'labaratory_appointment_create' labaratory.id %}" class="btn btn-success">Book Appointment</a>
+                <a href="{% url 'labaratory_list' %}" class="btn btn-secondary">Back to List</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

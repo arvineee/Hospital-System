@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block title %}Test Details - {{ test.test_name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h2>{{ test.test_name }}</h2>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Duration:</strong> {{ test.test_duration }}</p>
+                    <p><strong>Price:</strong> KSH {{ test.test_price }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Description:</strong></p>
+                    <p>{{ test.test_description }}</p>
+                </div>
+            </div>
+            <div class="mt-4">
+                <a href="{% url 'labaratory_test_result_list' labaratory.id test.id %}" class="btn btn-info">View Results</a>
+                <a href="{% url 'labaratory_test_update' labaratory.id test.id %}" class="btn btn-warning">Edit Test</a>
+                <a href="{% url 'labaratory_test_list' labaratory.id %}" class="btn btn-secondary">Back to Tests</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

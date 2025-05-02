@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}Update Appointment{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-header bg-warning">
+            <h2>Update Appointment</h2>
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="patient_name" class="form-label">Patient Name</label>
+                    <input type="text" class="form-control" id="patient_name" name="patient_name" 
+                           value="{{ appointment.patient_name }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="appointment_date" class="form-label">Date</label>
+                    <input type="date" class="form-control" id="appointment_date" name="appointment_date" 
+                           value="{{ appointment.appointment_date|date:'Y-m-d' }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="appointment_time" class="form-label">Time</label>
+                    <input type="time" class="form-control" id="appointment_time" name="appointment_time" 
+                           value="{{ appointment.appointment_time|time:'H:i' }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="appointment_reason" class="form-label">Reason</label>
+                    <textarea class="form-control" id="appointment_reason" name="appointment_reason" 
+                              rows="3" required>{{ appointment.appointment_reason }}</textarea>
+                </div>
+                <button type="submit" class="btn btn-warning">Update Appointment</button>
+                <a href="{% url 'labaratory_appointment_list' labaratory.id %}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
