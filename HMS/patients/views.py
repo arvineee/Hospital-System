@@ -8,6 +8,7 @@ from drugs.models import Drug, DrugIssue
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 from labaratory.models import Labaratory
+from labaratory.models import LabaratoryTestResult
 
 from datetime import datetime
 
@@ -214,8 +215,9 @@ def re_admit(request, id):
 
 def billing(request, id):
     try:
-        patient = Patient_register.objects.get(id=id)
+        patient = get_object_or_404(Patient_register, id=id)
         drug_issues = DrugIssue.objects.filter(patient=patient)
+        lab_results = LabaratoryTestResult.objects.filter(patient=patient)
 
         # Check if patient is already discharged
         if patient.is_discharged:
@@ -238,19 +240,27 @@ def billing(request, id):
             for issue in drug_issues
         )
 
+        # Calculate laboratory charges
+        laboratory_total = sum(
+            result.labaratory_test.test_price
+            for result in lab_results
+        )
+
         # Calculate total bill
         total_bill = {
             'consultation_charge': consultation_charge,
             'room_charge': total_room_charge,
             'medication_charge': medication_total,
+            'laboratory_charge': laboratory_total,
             'days_admitted': days_admitted,
             'daily_room_rate': daily_room_charge,
-            'total': consultation_charge + total_room_charge + medication_total
+            'total': consultation_charge + total_room_charge + medication_total + laboratory_total
         }
 
         context = {
             'patient': patient,
             'drug_issues': drug_issues,
+            'lab_results': lab_results,
             'bill': total_bill,
             'admission_date': admission_date,
             'current_date': current_date,
@@ -264,8 +274,6 @@ def billing(request, id):
     except Exception as e:
         messages.error(request, f"An error occurred: {str(e)}")
         return redirect('all_patients')
-    
-
 def patient_history(request, id):
     try:
         patient = Patient_register.objects.get(id=id)
