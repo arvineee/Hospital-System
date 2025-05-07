@@ -13,8 +13,10 @@
                 {% csrf_token %}
                 <div class="mb-3">
                     <label for="patient_name" class="form-label">Patient Name</label>
-                    <input type="text" class="form-control" id="patient_name" name="patient_name" required>
-                </div>
+					
+										<input type="text" class="form-control" id="patient_name" name="patient_name" value="{{patient}}" disabled required>
+	
+								</div>
                 <div class="mb-3">
                     <label for="appointment_date" class="form-label">Date</label>
                     <input type="date" class="form-control" id="appointment_date" name="appointment_date" required>

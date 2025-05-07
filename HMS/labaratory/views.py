@@ -96,7 +96,7 @@ def labaratory_appointment_create(request, labaratory_id):
     try:
         labaratory = get_object_or_404(Labaratory, id=labaratory_id)
         patient = get_object_or_404(Patient_register, id=request.GET.get('patient_id'))
-        
+        name = patient.name
         if request.method == 'POST':
             try:
                 appointment = LabaratoryAppointment(
@@ -115,7 +115,7 @@ def labaratory_appointment_create(request, labaratory_id):
                 
         context = {
             'labaratory': labaratory,
-            'patient': patient
+            'patient': patient,
         }
         return render(request, 'labaratory/laboratory_appointment_create.html', context)
         
@@ -131,8 +131,9 @@ def labaratory_appointment_create(request, labaratory_id):
 def labaratory_appointment_update(request, labaratory_id, appointment_id):
     labaratory = Labaratory.objects.get(id=labaratory_id)
     appointment = LabaratoryAppointment.objects.get(id=appointment_id)
+    patient = get_object_or_404(Patient_register, id=request.GET.get('patient_id'))
     if request.method == 'POST':
-        appointment.patient_name = request.POST['patient_name']
+        appointment.patient_name = patient
         appointment.appointment_date = request.POST['appointment_date']
         appointment.appointment_time = request.POST['appointment_time']
         appointment.appointment_reason = request.POST['appointment_reason']
