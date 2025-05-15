@@ -8,7 +8,7 @@
     {% if request.user.is_authenticated %}
     <!-- Content for logged-in users -->
     <div class="text-center">
-        <h1 class="mb-4">Welcome Back, {{ request.user.first_name }}!</h1>
+        <h1 class="mb-4">Welcome Back, {{ request.user.username }}!</h1>
         <p class="lead">Access your dashboard and manage the system.</p>
         <a href="{% url 'dashboard' %}" class="btn btn-primary btn-lg">Go to Dashboard</a>
     </div>

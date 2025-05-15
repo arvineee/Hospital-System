@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
-
+import psycopg
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -25,8 +25,10 @@ SECRET_KEY = "django-insecure-9qj7rm075_d#$!k9g4#cyp4x@grt@0zoww7(ni4y89v^)#7n5p
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = ["*"]
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.ngrok-free.app",
+]
 
 # Application definition
 
@@ -78,8 +80,12 @@ WSGI_APPLICATION = "HMS.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "hospital",
+        "USER":"Arvine",
+        "PASSWORD":"987654321",
+        "HOST":"localhost",
+        "PORT":5432,
     }
 }
 
