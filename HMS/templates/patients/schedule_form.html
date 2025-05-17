@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h2 class="mb-0"><i class="bi bi-calendar-plus me-2"></i>Schedule Appointment</h2>
+        </div>
+        <div class="card-body">
+            <form method="post" class="needs-validation" novalidate>
+                {% csrf_token %}
+                <div class="row g-3">
+                    <!-- Patient Field -->
+                    <div class="col-md-6">
+                        <label class="form-label"><i class="bi bi-person-circle me-2"></i>Patient</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control-plaintext" value="{{ patient.name }}" readonly>
+                            <input type="hidden" name="patient_id" value="{{ patient.id }}">
+                            <span class="input-group-text bg-primary text-white">
+                                <i class="bi bi-check2-circle"></i>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Doctor Selection -->
+<div class="col-md-6">
+    <label class="form-label"><i class="bi bi-person-badge me-2"></i>Select Doctor</label>
+    <select name="doctor" class="form-select select2-doctor" required>
+        <option value="" disabled selected>Choose doctor...</option>
+        {% for doctor in doctors %}
+            <option value="{{ doctor.id }}" 
+                    data-specialty="{% if doctor.doctorprofile.specialty %}{{ doctor.doctorprofile.specialty }}{% else %}General Practitioner{% endif %}"
+                    data-availability="{{ doctor.doctorprofile.availability }}">
+                Dr. {{ doctor.get_full_name }}
+                {% if doctor.doctorprofile.specialty %}
+                    - {{ doctor.doctorprofile.specialty }}
+                {% endif %}
+            </option>
+        {% empty %}
+            <option disabled>No doctors available - contact administration</option>
+        {% endfor %}
+    </select>
+    <div class="invalid-feedback">
+        Please select a qualified doctor
+    </div>
+</div>
+
+                    <!-- Date & Time Picker -->
+                    <div class="col-md-6">
+                        <label class="form-label"><i class="bi bi-clock me-2"></i>Date & Time</label>
+                        <div class="input-group">
+                            <input type="datetime-local" 
+                                   name="schedule_date" 
+                                   class="form-control" 
+                                   required
+                                   min="{{ today|date:'Y-m-d' }}T08:00"
+                                   max="{{ today|date:'Y-m-d' }}T18:00">
+                            <span class="input-group-text">
+                                <i class="bi bi-calendar3"></i>
+                            </span>
+                        </div>
+                        <small class="text-muted">Clinic hours: 8AM - 6PM</small>
+                    </div>
+
+                    <!-- Purpose Textarea -->
+                    <div class="col-12">
+                        <label class="form-label"><i class="bi bi-chat-text me-2"></i>Purpose</label>
+                        <textarea name="purpose" 
+                                  class="form-control" 
+                                  rows="4" 
+                                  placeholder="Enter appointment purpose..."
+                                  required></textarea>
+                        <div class="invalid-feedback">
+                            Please provide a reason for the appointment
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="mt-4 d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="bi bi-send-check me-2"></i>Schedule Appointment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border-radius: 15px;
+    }
+    .form-label {
+        font-weight: 500;
+        color: #2c3e50;
+    }
+    .input-group-text {
+        background-color: #e9ecef;
+        border: none;
+    }
+    textarea {
+        resize: none;
+    }
+    .invalid-feedback {
+        display: block;
+        margin-top: 0.25rem;
+    }
+</style>
+{% endblock %}

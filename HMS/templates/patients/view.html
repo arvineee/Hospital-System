@@ -77,6 +77,67 @@
         </div>
     </div>
 
+		<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h3 class="mb-0"><i class="bi bi-calendar2-check me-2"></i>Upcoming Appointments</h3>
+    </div>
+    <div class="card-body">
+        {% if patient.appointment_set.all %}
+            <div class="list-group">
+                {% for appointment in patient.appointment_set.all %}
+                    {% if appointment.status == 'Scheduled' %}
+                        <div class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <div class="me-4">
+                                    <i class="bi bi-clock-history me-2"></i>
+                                    <strong>{{ appointment.schedule_date|date:"M j, Y H:i" }}</strong>
+                                </div>
+                                <span class="badge bg-success rounded-pill">{{ appointment.status }}</span>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-md-4">
+                                    <i class="bi bi-person-badge me-2"></i>
+                                    Dr. {{ appointment.doctor.get_full_name }}
+                                </div>
+                                <div class="col-md-8 text-truncate">
+                                    <i class="bi bi-journal-text me-2"></i>
+                                    {{ appointment.purpose }}
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-info mb-0" role="alert">
+                <i class="bi bi-info-circle-fill me-2"></i>No upcoming appointments found
+            </div>
+        {% endif %}
+
+        <div class="mt-4 d-grid gap-2">
+            <a href="{% url 'schedule_patient' patient.id %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-2"></i>Schedule New Appointment
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .appointments-section .list-group-item {
+        transition: all 0.3s ease;
+    }
+    .appointments-section .list-group-item:hover {
+        transform: translateX(5px);
+        background-color: #f8f9fa;
+    }
+    .text-truncate {
+        max-width: 1px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+</style>
+
     <!-- Admission Status -->
     <div class="card mb-4">
         <div class="card-header {% if patient.is_discharged %}bg-success{% else %}bg-warning{% endif %} text-white">

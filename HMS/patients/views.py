@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.contrib import messages
-from .models import Patient_register, PatientHistory
+from .models import Patient_register, PatientHistory,Appointment
 from drugs.models import DrugIssue
 from django.contrib.auth.decorators import login_required
 from drugs.models import Drug, DrugIssue 
@@ -9,9 +9,12 @@ from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 from labaratory.models import Labaratory
 from labaratory.models import LabaratoryTestResult
+from django.utils import timezone
+from datetime import datetime,timedelta
+from django.db.models import Q 
+import logging
 
-from datetime import datetime
-
+logger = logging.getLogger(__name__)
 
 # Create your views here.
 def all_patients(request):
@@ -376,3 +379,121 @@ def patient_history(request, id):
     except Exception as e:
         messages.error(request, f"An error occurred: {str(e)}")
         return redirect('all_patients')
+
+@login_required
+def schedule_appointment(request, patient_id=None):
+    patient = None
+    if patient_id:
+        patient = get_object_or_404(Patient_register, id=patient_id)
+    
+    # Get qualified doctors (medical staff or in Doctors group)
+    doctors = User.objects.filter(
+        Q(groups__name='Doctors') | 
+        Q(is_staff=True)
+    ).distinct().order_by('last_name')
+    
+    default_time = datetime.now().strftime('%Y-%m-%dT%H:%M')
+    context = {
+        'patient': patient,
+        'doctors': doctors,
+        'default_time': default_time,
+        'min_date': datetime.now().strftime('%Y-%m-%d'),
+        'max_date': (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d')
+    }
+
+    if request.method == 'POST':
+        try:
+            # Validate required fields
+            required_fields = ['patient_id', 'doctor', 'schedule_date', 'purpose']
+            if not all(request.POST.get(field) for field in required_fields):
+                messages.error(request, "All fields are required")
+                return render(request, 'patients/schedule_form.html', context)
+
+            # Get form data
+            patient_id = request.POST.get('patient_id')
+            doctor_id = request.POST.get('doctor')
+            schedule_date_str = request.POST.get('schedule_date')
+            purpose = request.POST.get('purpose').strip()
+
+            # Convert datetime
+            schedule_date = datetime.strptime(schedule_date_str, '%Y-%m-%dT%H:%M')
+            
+            # Validate patient
+            patient = get_object_or_404(Patient_register, id=patient_id)
+            
+            # Validate doctor
+            doctor = get_object_or_404(User, id=doctor_id)
+            if not doctor.groups.filter(name='Doctors').exists() and not doctor.is_staff:
+                messages.error(request, "Selected user is not a qualified doctor")
+                return render(request, 'patients/schedule_form.html', context)
+
+            # Check scheduling conflict
+            if Appointment.objects.filter(
+                doctor=doctor,
+                schedule_date__date=schedule_date.date(),
+                schedule_date__hour=schedule_date.hour
+            ).exists():
+                messages.error(request, "Doctor has conflicting appointment in this time slot")
+                return render(request, 'patients/schedule_form.html', context)
+
+            # Check valid schedule time (8AM-6PM)
+            if not (8 <= schedule_date.hour < 18):
+                messages.error(request, "Appointments only available between 8AM and 6PM")
+                return render(request, 'patients/schedule_form.html', context)
+
+            # Create appointment
+            Appointment.objects.create(
+                patient=patient,
+                doctor=doctor,
+                schedule_date=schedule_date,
+                purpose=purpose,
+                created_by=request.user
+            )
+
+            messages.success(request, 
+                f"Appointment scheduled with Dr. {doctor.last_name} "
+                f"on {schedule_date.strftime('%b %d, %Y at %I:%M %p')}"
+            )
+            return redirect('view_appointments')
+
+        except ValueError as e:
+            messages.error(request, f"Invalid date/time format: {str(e)}")
+        except Exception as e:
+            messages.error(request, f"Error scheduling appointment: {str(e)}")
+            logger.error(f"Appointment scheduling error: {str(e)}")
+
+    return render(request, 'patients/schedule_form.html', context)
+
+@login_required
+def view_appointments(request):
+    # For doctors: show their appointments
+    if request.user.groups.filter(name='Doctors').exists():
+        appointments = Appointment.objects.filter(doctor=request.user)
+    # For patients: show their appointments
+    elif hasattr(request.user, 'patient_profile'):
+        appointments = Appointment.objects.filter(patient=request.user.patient_profile)
+    # For admins: show all appointments
+    else:
+        appointments = Appointment.objects.all()
+    
+    return render(request, 'patients/appointment_list.html', {
+        'appointments': appointments.order_by('schedule_date')
+    })
+
+@login_required
+def update_appointment_status(request, appointment_id):
+    appointment = get_object_or_404(Appointment, id=appointment_id)
+    
+    if request.method == 'POST':
+        new_status = request.POST.get('status')
+        if new_status in dict(Appointment.status_choices):
+            appointment.status = new_status
+            appointment.save()
+            messages.success(request, "Appointment status updated successfully!")
+            return redirect('view_appointments')
+    
+    return render(request, 'patients/update_appointment_status.html', {
+        'appointment': appointment,
+        'today': timezone.now().strftime('%Y-%m-%d'),
+        'status_choices': Appointment.status_choices
+    })
