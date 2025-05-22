@@ -138,5 +138,5 @@ This project is licensed under the MIT License. See the LICENSE file for details
 
 Contact
 
-For questions or feedback, open an issue or reach out to maintainer@example.com.
+For questions or feedback, open an issue or reach out to kiruifelix03@gmail.com
 
