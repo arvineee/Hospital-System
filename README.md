@@ -40,8 +40,8 @@ Installation
 
 1. Clone the repository
 
-git clone https://github.com/your-username/hospital-management-system.git
-cd hospital-management-system
+git clone https://github.com/arvineee/Hospital-System.git
+cd Hospital-System
 
 
 2. Create and activate a virtual environment
