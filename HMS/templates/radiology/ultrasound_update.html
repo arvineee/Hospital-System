@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Update Ultrasound{% endblock %}
+{% block content %}
+<div class="container mt-5">
+    <h2>Update Ultrasound Record</h2>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="patient" class="form-label">Patient</label>
+            <input type="text" class="form-control" id="patient" name="patient" value="{{ ultrasound.patient }}" readonly>
+        </div>
+        <div class="mb-3">
+            <label for="date" class="form-label">Date</label>
+            <input type="text" class="form-control" id="date" name="date" value="{{ ultrasound.date }}" readonly>
+        </div>
+        <div class="mb-3">
+            <label for="ultrasound_type" class="form-label">Ultrasound Type</label>
+            <input type="text" class="form-control" id="ultrasound_type" name="ultrasound_type" value="{{ ultrasound.ultrasound_type }}">
+        </div>
+        <div class="mb-3">
+            <label for="findings" class="form-label">Findings</label>
+            <textarea class="form-control" id="findings" name="findings" rows="4">{{ ultrasound.findings }}</textarea>
+        </div>
+        <div class="mb-3">
+    <label for="image" class="form-label">Image</label>
+    {% if ultrasound.image %}
+        <div class="mb-2">
+            <img src="{{ ultrasound.image.url }}" alt="Ultrasound Image" class="img-thumbnail shadow-sm" style="max-width: 200px; border: 2px solid #0dcaf0;">
+        </div>
+        <a href="{{ ultrasound.image.url }}" target="_blank" class="btn btn-outline-info btn-sm mb-2">
+            <i class="bi bi-eye"></i> View image
+        </a>
+    
+            {% else %}
+                <span class="text-muted">No Image</span>
+            {% endif %}
+            <input class="form-control" type="file" id="image" name="image">
+        </div>
+        <button type="submit" class="btn btn-primary">Update</button>
+        <a href="{% url 'ultrasound_list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

@@ -7,7 +7,7 @@ class Ultrasound(models.Model):
     date = models.DateField(auto_now_add=True)
     ultrasound_type = models.CharField(max_length=100)
     findings = models.TextField(blank=True, null=True)
-    image = models.ImageField(upload_to='ultrasound_images/', blank=True, null=True)
+    image = models.ImageField(upload_to='img/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     

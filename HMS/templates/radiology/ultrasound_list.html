@@ -3,7 +3,7 @@
 {% block content %}
 <div class="container">
     <h2 class="mb-4">Ultrasound Records</h2>
-    <a href="{% url 'ultrasound-add' %}" class="btn btn-primary mb-3">Add New Ultrasound</a>
+    <a href="{% url 'ultrasound_create' %}" class="btn btn-primary mb-3">Add New Ultrasound</a>
     <table class="table table-bordered table-hover">
         <thead class="table-light">
             <tr>
@@ -32,9 +32,9 @@
                     {% endif %}
                 </td>
                 <td>
-                    <a href="{% url 'ultrasound-detail' ultrasound.id %}" class="btn btn-info btn-sm">Detail</a>
-                    <a href="{% url 'ultrasound-update' ultrasound.id %}" class="btn btn-warning btn-sm">Edit</a>
-                    <a href="{% url 'ultrasound-delete' ultrasound.id %}" class="btn btn-danger btn-sm">Delete</a>
+                    <a href="{% url 'ultrasound_detail' ultrasound.id %}" class="btn btn-info btn-sm">Detail</a>
+                    <a href="{% url 'ultrasound_update' ultrasound.id %}" class="btn btn-warning btn-sm">Edit</a>
+                    <a href="{% url 'ultrasound_delete' ultrasound.id %}" class="btn btn-danger btn-sm">Delete</a>
                 </td>
             </tr>
             {% empty %}

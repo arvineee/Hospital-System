@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Ultrasound Record{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">Create Ultrasound Record</h2>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="id_patient" class="form-label">Patient</label>
+            <select name="patient_id" id="id_patient" class="form-select" required>
+                <option value="">Select a patient</option>
+                {% for patient in patients %}
+                    <option value="{{ patient.id }}">{{ patient.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="id_ultrasound_type" class="form-label">Ultrasound Type</label>
+            <input type="text" name="ultrasound_type" id="id_ultrasound_type" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label for="id_findings" class="form-label">Findings</label>
+            <textarea name="findings" id="id_findings" class="form-control"></textarea>
+        </div>
+        <div class="mb-3">
+            <label for="id_image" class="form-label">Image</label>
+            <input type="file" name="image" id="id_image" class="form-control">
+        </div>
+        <button type="submit" class="btn btn-success">Save</button>
+        <a href="{% url 'ultrasound_list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}
