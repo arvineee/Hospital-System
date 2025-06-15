@@ -9,6 +9,7 @@ from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 from labaratory.models import Labaratory
 from labaratory.models import LabaratoryTestResult
+from radiology.models import Ultrasound
 from django.utils import timezone
 from datetime import datetime,timedelta
 from django.db.models import Q 
@@ -497,3 +498,27 @@ def update_appointment_status(request, appointment_id):
         'today': timezone.now().strftime('%Y-%m-%d'),
         'status_choices': Appointment.status_choices
     })
+
+@login_required
+def cancel_appointment(request, appointment_id):
+    appointment = get_object_or_404(Appointment, id=appointment_id)
+    
+    if request.method == 'POST':
+        appointment.delete()
+        messages.success(request, "Appointment cancelled successfully!")
+        return redirect('view_appointments')
+    
+    return render(request, 'patients/cancel_appointment.html', {
+        'appointment': appointment
+    })
+
+@login_required
+def view_patient_ultrasounds(request, patient_id):
+    patient = get_object_or_404(Patient_register, id=patient_id)
+    ultrasounds = Ultrasound.objects.filter(patient=patient).order_by('-date')
+    
+    return render(request, 'patients/patient_ultrasounds.html', {
+        'patient': patient,
+        'ultrasounds': ultrasounds
+    })
+

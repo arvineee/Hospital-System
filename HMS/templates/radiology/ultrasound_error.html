@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block title %}Ultrasound Error{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="alert alert-danger mt-4">
+        <h4 class="alert-heading">Error</h4>
+        <p>{{ error_message }}</p>
+        <a href="{% url 'ultrasound-list' %}" class="btn btn-secondary mt-3">Back to Ultrasound List</a>
+    </div>
+</div>
+{% endblock %}

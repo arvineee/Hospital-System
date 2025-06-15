@@ -28,11 +28,13 @@ DEBUG = True
 ALLOWED_HOSTS = ["*"]
 CSRF_TRUSTED_ORIGINS = [
     "https://*.ngrok-free.app",
+    "https://localhost:8000",
 ]
 
 # Application definition
 
 INSTALLED_APPS = [
+    "radiology",
     "labaratory",
     "accounts",
     "patients",
@@ -80,12 +82,12 @@ WSGI_APPLICATION = "HMS.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "hospital",
-        "USER":"Arvine",
-        "PASSWORD":"987654321",
-        "HOST":"localhost",
-        "PORT":5432,
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": "dbsqlite3",
+        # "USER":"Arvine",
+        # "PASSWORD":"987654321",
+        # "HOST":"localhost",
+        # "PORT":5432,
     }
 }
 

@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Ultrasound Detail{% endblock %}
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Ultrasound Detail</h2>
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <strong>Patient:</strong> {{ ultrasound.patient }}
+        </div>
+        <div class="card-body">
+            <p><strong>Date:</strong> {{ ultrasound.date }}</p>
+            <p><strong>Type:</strong> {{ ultrasound.ultrasound_type }}</p>
+            <p><strong>Findings:</strong> {{ ultrasound.findings|linebreaks }}</p>
+            <p>
+                <strong>Image:</strong>
+                {% if ultrasound.image %}
+                    <br>
+                    <img src="{{ ultrasound.image.url }}" alt="Ultrasound Image" class="img-fluid rounded" style="max-width:400px;">
+                {% else %}
+                    <span class="text-muted">No Image</span>
+                {% endif %}
+            </p>
+        </div>
+    </div>
+    <a href="{% url 'ultrasound-list' %}" class="btn btn-secondary mt-3">Back to List</a>
+</div>
+{% endblock %}

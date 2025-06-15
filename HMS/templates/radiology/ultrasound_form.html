@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Add/Edit Ultrasound{% endblock %}
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">{% if form.instance.pk %}Edit{% else %}Add{% endif %} Ultrasound Record</h2>
+    <form method="post" enctype="multipart/form-data" class="card p-4">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <div class="mb-3">
+            <label for="id_patient" class="form-label">Patient</label>
+            {{ form.patient }}
+            {{ form.patient.errors }}
+        </div>
+        <div class="mb-3">
+            <label for="id_ultrasound_type" class="form-label">Ultrasound Type</label>
+            {{ form.ultrasound_type }}
+            {{ form.ultrasound_type.errors }}
+        </div>
+        <div class="mb-3">
+            <label for="id_findings" class="form-label">Findings</label>
+            {{ form.findings }}
+            {{ form.findings.errors }}
+        </div>
+        <div class="mb-3">
+            <label for="id_image" class="form-label">Image</label>
+            {{ form.image }}
+            {{ form.image.errors }}
+        </div>
+        <button type="submit" class="btn btn-success">Save</button>
+        <a href="{% url 'ultrasound-list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

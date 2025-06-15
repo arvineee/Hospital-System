@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}Ultrasound Records{% endblock %}
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Ultrasound Records</h2>
+    <a href="{% url 'ultrasound-add' %}" class="btn btn-primary mb-3">Add New Ultrasound</a>
+    <table class="table table-bordered table-hover">
+        <thead class="table-light">
+            <tr>
+                <th>ID</th>
+                <th>Patient</th>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Findings</th>
+                <th>Image</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ultrasound in ultrasounds %}
+            <tr>
+                <td>{{ ultrasound.id }}</td>
+                <td>{{ ultrasound.patient }}</td>
+                <td>{{ ultrasound.date }}</td>
+                <td>{{ ultrasound.ultrasound_type }}</td>
+                <td>{{ ultrasound.findings|truncatewords:10 }}</td>
+                <td>
+                    {% if ultrasound.image %}
+                        <a href="{{ ultrasound.image.url }}" target="_blank">View</a>
+                    {% else %}
+                        <span class="text-muted">No Image</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'ultrasound-detail' ultrasound.id %}" class="btn btn-info btn-sm">Detail</a>
+                    <a href="{% url 'ultrasound-update' ultrasound.id %}" class="btn btn-warning btn-sm">Edit</a>
+                    <a href="{% url 'ultrasound-delete' ultrasound.id %}" class="btn btn-danger btn-sm">Delete</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" class="text-center">No ultrasound records found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
