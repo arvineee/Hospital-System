@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <h2>Pending Ultrasound Requests</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Patient</th>
+                <th>Requested At</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for req in requests %}
+            <tr>
+                <td>{{ req.patient.name }}</td>
+                <td>{{ req.requested_at }}</td>
+                <td>
+                    <a href="{% url 'add_ultrasound_for_request' req.id %}" class="btn btn-primary btn-sm">Add Ultrasound</a>
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="3">No pending requests.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

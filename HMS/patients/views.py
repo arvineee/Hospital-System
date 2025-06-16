@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.contrib import messages
+from django.urls import reverse
 from .models import Patient_register, PatientHistory,Appointment
 from drugs.models import DrugIssue
 from django.contrib.auth.decorators import login_required
@@ -522,3 +523,18 @@ def view_patient_ultrasounds(request, patient_id):
         'ultrasounds': ultrasounds
     })
 
+
+@login_required
+def request_ultrasound(request, patient_id):
+    patient = get_object_or_404(Patient_register, id=patient_id)
+    if request.method == 'POST':
+
+        messages.success(request, f"Ultrasound request for {patient.name} has been sent to Radiology.")
+        # Optionally, you can create a model to track requests, or just redirect to radiology add page
+        return redirect(reverse('ultrasound_create') + f'?patient_id={patient.id}')
+    return render(request, 'patients/request_ultrasound.html', {'patient': patient})
+
+
+    
+    
+   

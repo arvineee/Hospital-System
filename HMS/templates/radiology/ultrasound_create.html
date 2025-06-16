@@ -7,15 +7,23 @@
     <h2 class="mb-4">Create Ultrasound Record</h2>
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        <div class="mb-3">
-            <label for="id_patient" class="form-label">Patient</label>
-            <select name="patient_id" id="id_patient" class="form-select" required>
-                <option value="">Select a patient</option>
-                {% for patient in patients %}
-                    <option value="{{ patient.id }}">{{ patient.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
+        {% if patient %}
+            <div class="mb-3">
+                <label class="form-label">Patient</label>
+                <input type="text" class="form-control" value="{{ patient.name }}" readonly>
+                <input type="hidden" name="patient_id" value="{{ patient.id }}">
+            </div>
+        {% else %}
+            <div class="mb-3">
+                <label for="id_patient" class="form-label">Patient</label>
+                <select name="patient_id" id="id_patient" class="form-select" required>
+                    <option value="">Select a patient</option>
+                    {% for patient in patients %}
+                        <option value="{{ patient.id }}">{{ patient.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        {% endif %}
         <div class="mb-3">
             <label for="id_ultrasound_type" class="form-label">Ultrasound Type</label>
             <input type="text" name="ultrasound_type" id="id_ultrasound_type" class="form-control" required>

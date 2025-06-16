@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <h2>Request Ultrasound for {{ patient.name }}</h2>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary">Send Request to Radiology</button>
+        <a href="{% url 'pat_view' patient.id %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}
