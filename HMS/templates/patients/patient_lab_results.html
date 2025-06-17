@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <h2>Lab Results for {{ patient.name }}</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Test</th>
+                <th>Lab</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Result</th>
+                <th>Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for result in results %}
+            <tr>
+                <td>{{ result.labaratory_test.test_name }}</td>
+                <td>{{ result.labaratory_test.labaratory.labaratory_name }}</td>
+                <td>{{ result.test_date|date:'Y-m-d H:i' }}</td>
+                <td>{{ result.status }}</td>
+                <td>{{ result.test_result|default:'-' }}</td>
+                <td>{{ result.notes|default:'-' }}</td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="6">No lab results found.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

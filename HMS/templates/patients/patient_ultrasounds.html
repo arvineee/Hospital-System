@@ -23,5 +23,7 @@
         <p class="text-muted">No ultrasound records found for this patient.</p>
     {% endif %}
     <a href="{% url 'pat_view' patient.id %}" class="btn btn-secondary mt-3">Back to Patient</a>
+    <a href="{% url 'request_ultrasound' patient.id %}" class="btn btn-primary mt-3">Request ultrasound</a>
+    
 </div>
-{% endblock %}
+{% endblock %} 

@@ -16,10 +16,12 @@ from .views import (
     labaratory_appointment_detail,
     labaratory_appointment_update,
     labaratory_appointment_delete,
-    labaratory_test_result_update
+    labaratory_test_result_update,
+    labaratory_home
 )
 
 urlpatterns = [
+    path('', labaratory_home, name='labaratory_home'),
     path('patient/<int:patient_id>/results/', labaratory_test_result_list, name='patient_test_results'),
     path('labaratories/', labaratory_list, name='labaratory_list'),
     path('labaratories/<int:labaratory_id>/', labaratory_detail, name='labaratory_detail'),

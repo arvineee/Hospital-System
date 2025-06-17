@@ -262,3 +262,5 @@ def labaratory_test_result_update(request, labaratory_id, test_id, result_id):
     except Exception as e:
         messages.error(request, f"Error updating test result: {str(e)}")
         return redirect('patient_test_results', patient_id=result.patient.id)
+def labaratory_home(request):
+    return render(request, 'labaratory/labaratory_home.html')
