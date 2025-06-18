@@ -25,6 +25,15 @@
             <br>
             <label class='form-label' for="confirm_password">Confirm Password:</label> 
             <input class="form-control" type="password" id="confirm_password" name="confirm_password" required></input>   
+            <br>
+            <label class='form-label' for="role">Role:</label>
+            <select class="form-select" id="role" name="role" required>
+                <option value="">Select Role</option>
+                <option value="doctor">Doctor</option>
+                <option value="pharmacist">Pharmacist</option>
+                <option value="lab_tech">Lab Technician</option>
+                <option value="radiologist">Radiologist</option>
+            </select>
             <input type="submit" class="btn btn-lg btn-success w-100 mt-3" value="Register">
         </form>
         

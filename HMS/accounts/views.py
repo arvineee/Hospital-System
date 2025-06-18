@@ -3,6 +3,8 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.urls import reverse
+from .models import UserProfile
+from django.core.exceptions import ObjectDoesNotExist
 
 def register(request):
     if request.method == 'POST':
@@ -12,6 +14,7 @@ def register(request):
         email = request.POST.get('email').strip()
         password = request.POST.get('password')
         confirm_password = request.POST.get('confirm_password')
+        role = request.POST.get('role')
 
         # Validate form data
         if password != confirm_password:
@@ -26,6 +29,10 @@ def register(request):
             messages.error(request, 'Email already exists.')
             return render(request, 'auth/register.html')
 
+        if not role:
+            messages.error(request, 'Please select a role.')
+            return render(request, 'auth/register.html')
+
         # Create and save the user
         user = User.objects.create_user(
             username=username,
@@ -35,6 +42,8 @@ def register(request):
             last_name=last_name
         )
         user.save()
+        # Create UserProfile with selected role
+        UserProfile.objects.create(user=user, role=role)
         messages.success(request, 'Registration successful. You can now log in.')
         return redirect('login')  
 
@@ -49,6 +58,12 @@ def login(request):
         # Authenticate the user
         user = authenticate(request, username=username, password=password)
         if user is not None:
+            # Ensure UserProfile exists for legacy users
+            from .models import UserProfile
+            try:
+                user.userprofile
+            except ObjectDoesNotExist:
+                UserProfile.objects.create(user=user, role='doctor')  # Default role, can be changed
             auth_login(request, user)  
             return redirect(reverse('dashboard')) 
         else:

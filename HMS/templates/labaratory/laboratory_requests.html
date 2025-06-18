@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Laboratory Requests</h2>
+    {% if requests %}
+        <table class="table table-bordered table-striped mt-3">
+            <thead>
+                <tr>
+                    <th>Request ID</th>
+                    <th>Patient</th>
+                    <th>Test</th>
+                    <th>Requested By</th>
+                    <th>Date Requested</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in requests %}
+                <tr>
+                    <td>{{ req.id }}</td>
+                    <td>{{ req.patient }}</td>
+                    <td>{{ req.test_name }}</td>
+                    <td>{{ req.requested_by }}</td>
+                    <td>{{ req.date_requested|date:'Y-m-d H:i' }}</td>
+                    <td>{{ req.status }}</td>
+                    <td>
+                        <a href="{% url 'labaratory:view_lab_result' req.id %}" class="btn btn-sm btn-info">View Result</a>
+                        <!-- Add more actions as needed -->
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No laboratory requests found.</p>
+    {% endif %}
+</div>
+{% endblock %}

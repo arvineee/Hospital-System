@@ -58,3 +58,20 @@ class LabaratoryAppointment(models.Model):
     
     def __str__(self):
         return f"Appointment for {self.patient.name} on {self.appointment_date}"
+    
+
+class Laboratory_requests(models.Model):
+    patient = models.ForeignKey(Patient_register, on_delete=models.CASCADE)
+    labaratory_test = models.ForeignKey(LabaratoryTest, on_delete=models.CASCADE)
+    request_date = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=20, default='Pending', choices=[
+        ('Pending', 'Pending'),
+        ('In Progress', 'In Progress'),
+        ('Completed', 'Completed'),
+        ('Cancelled', 'Cancelled'),
+    ])
+    is_completed = models.BooleanField(default=False)
+    notes = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Request for {self.patient.name} - {self.labaratory_test.test_name} on {self.request_date}"

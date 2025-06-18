@@ -17,11 +17,12 @@ from .views import (
     labaratory_appointment_update,
     labaratory_appointment_delete,
     labaratory_test_result_update,
-    labaratory_home
+    view_laboratory_requests,
+    lab_dashboard
 )
 
 urlpatterns = [
-    path('', labaratory_home, name='labaratory_home'),
+    path('', view_laboratory_requests, name='lview_laboratory_requests'),
     path('patient/<int:patient_id>/results/', labaratory_test_result_list, name='patient_test_results'),
     path('labaratories/', labaratory_list, name='labaratory_list'),
     path('labaratories/<int:labaratory_id>/', labaratory_detail, name='labaratory_detail'),
@@ -55,6 +56,8 @@ urlpatterns = [
      path('labaratories/<int:labaratory_id>/tests/<int:test_id>/results/<int:result_id>/update/',
          labaratory_test_result_update,
          name='labaratory_test_result_update'),
-   
-   
+    path('dashboard/', lab_dashboard, name='lab_dashboard'),
+    path('view_laboratory_requests/<int:laboratory_id>/'
+         , view_laboratory_requests, name='view_laboratory_requests')  ,
+    path('requested_lab_tests/', view_laboratory_requests, name= 'requested_lab_tests'),
 ]

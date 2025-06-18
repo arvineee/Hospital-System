@@ -65,6 +65,7 @@
                 <a href="{% url 'billing' patient.id %}" class="btn btn-dark">Billing</a>
                 {% endif %}
                 <a href="{% url 'view_patient_ultrasounds' patient.id %}" class="btn btn-warning">Ultrasound Records</a>
+                <a href="{% url 'request_lab_test' patient.id %}" class="btn btn-warning">Request Lab Test</a>
             </div>
         </div>
     </div>
@@ -86,6 +87,11 @@
                     </button>
                     <ul class="dropdown-menu">
                         {% for lab in labaratories %}
+                        <li>
+                            <a class="dropdown-item" href="{% url 'request_labaratory_test' patient.id %}">
+                                <i class="bi bi-plus-circle me-2"></i>{{ lab.labaratory_name }}
+                            </a>
+                        </li>
                         <li>
                             <a class="dropdown-item" href="{% url 'labaratory_appointment_create' lab.id %}?patient_id={{ patient.id }}">
                                 {{ lab.labaratory_name }}

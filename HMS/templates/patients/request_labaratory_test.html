@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Request Laboratory Test for {{ patient.name }}</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="labaratory_id" class="form-label">Select Laboratory</label>
+            <select class="form-select" id="labaratory_id" name="labaratory_id" required>
+                <option value="">-- Select Laboratory --</option>
+                {% for lab in labaratories %}
+                <option value="{{ lab.id }}">{{ lab.labaratory_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="test_name" class="form-label">Test Name</label>
+            <input type="text" class="form-control" id="test_name" name="test_name" required>
+        </div>
+        <div class="mb-3">
+            <label for="notes" class="form-label">Notes (optional)</label>
+            <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Request Test</button>
+        <a href="{% url 'pat_view' patient.id %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

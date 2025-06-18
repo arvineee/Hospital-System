@@ -1,4 +1,5 @@
 {% load static %}
+{% load userprofile_extras %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -60,45 +61,52 @@
                             <a class="nav-link" href="{% url 'admin:index' %}">Admin</a>
                         </li>
                         {% endif %}
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="patientsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Patients
-                            </a>
-                            <ul class="dropdown-menu" aria-labelledby="patientsDropdown">
-                                <li><a class="dropdown-item" href="{% url 'all_patients' %}">View Patients</a></li>
-                                <li><a class="dropdown-item" href="{% url 'pat_register' %}">Register Patient</a></li>
-                            </ul>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="drugsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Drugs
-                            </a>
-                            <ul class="dropdown-menu" aria-labelledby="drugsDropdown">
-                                <li><a class="dropdown-item" href="{% url 'add_drug' %}">Add New Drug</a></li>
-                                <li><a class="dropdown-item" href="{% url 'all_drugs' %}">View All Drugs</a></li>
-                            </ul>
-                        </li>
-                        <!-- Radiology Dropdown -->
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="radiologyDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Radiology
-                            </a>
-                            <ul class="dropdown-menu" aria-labelledby="radiologyDropdown">
-                                <li><a class="dropdown-item" href="{% url 'ultrasound_list' %}">View Ultrasounds</a></li>
-                                <li><a class="dropdown-item" href="{% url 'ultrasound_create' %}">Add Ultrasound</a></li>
-                                <li><a class="dropdown-item" href="{% url 'ultrasound_requests_list' %}">Ultrasound Requests</a></li>
-                            </ul>
-                        </li>
-                        <!-- Laboratory Dropdown -->
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="labaratoryDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Laboratory
-                            </a>
-                            <ul class="dropdown-menu" aria-labelledby="labaratoryDropdown">
-                                <li><a class="dropdown-item" href="/labaratory/">View Lab Results</a></li>
-                                <li><a class="dropdown-item" href="/labaratory/request/">Request Lab Test</a></li>
-                            </ul>
-                        </li>
+                        {% with role=user|get_user_role %}
+                        {% if role == 'doctor' %}
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="patientsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Patients
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="patientsDropdown">
+                                    <li><a class="dropdown-item" href="{% url 'all_patients' %}">View Patients</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'pat_register' %}">Register Patient</a></li>
+                                </ul>
+                            </li>
+                        {% endif %}
+                        {% if role == 'pharmacist' %}
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="drugsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Drugs
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="drugsDropdown">
+                                    <li><a class="dropdown-item" href="{% url 'add_drug' %}">Add New Drug</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'all_drugs' %}">View All Drugs</a></li>
+                                </ul>
+                            </li>
+                        {% endif %}
+                        {% if role == 'radiologist' %}
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="radiologyDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Radiology
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="radiologyDropdown">
+                                    <li><a class="dropdown-item" href="{% url 'ultrasound_list' %}">View Ultrasounds</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'ultrasound_create' %}">Add Ultrasound</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'ultrasound_requests_list' %}">Ultrasound Requests</a></li>
+                                </ul>
+                            </li>
+                        {% endif %}
+                        {% if role == 'lab_tech' %}
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="labaratoryDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Laboratory
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="labaratoryDropdown">
+                                    <li><a class="dropdown-item" href="/labaratory/dashboard/">Dashboard</a></li>
+                                </ul>
+                            </li>
+                        {% endif %}
+                        {% endwith %}
                     {% else %}
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'login' %}">Login</a>

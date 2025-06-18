@@ -154,9 +154,13 @@ def pat_search(request):
 def pat_view(request, id):
     patient = get_object_or_404(Patient_register, id=id)
     labaratories = Labaratory.objects.all()
+    # Add available lab tests for request
+    from labaratory.models import LabaratoryTest
+    available_tests = LabaratoryTest.objects.all()
     return render(request, 'patients/view.html', {
         'patient': patient,
-        'labaratories': labaratories
+        'labaratories': labaratories,
+        'available_tests': available_tests
     })
 
 def prescribe_drugs(request, id):
@@ -575,6 +579,31 @@ def view_patient_lab_results(request, patient_id):
     patient = get_object_or_404(Patient_register, id=patient_id)
     results = LabaratoryTestResult.objects.filter(patient=patient).order_by('-test_date')
     return render(request, 'patients/patient_lab_results.html', {'patient': patient, 'results': results})
+
+
+@login_required
+def request_labaratory_test(request, patient_id):
+    patient = get_object_or_404(Patient_register, id=patient_id)
+    labaratories = Labaratory.objects.all()
+    if request.method == 'POST':
+        labaratory_id = request.POST.get('labaratory_id')
+        test_name = request.POST.get('test_name')
+        notes = request.POST.get('notes', '')
+        labaratory = get_object_or_404(Labaratory, id=labaratory_id)
+        # Create a lab test result as a request (Pending)
+        labaratory_test = labaratory.labaratorytest_set.filter(test_name=test_name).first()
+        if labaratory_test:
+            LabaratoryTestResult.objects.create(
+                labaratory_test=labaratory_test,
+                patient=patient,
+                test_result='',
+                test_date=timezone.now(),
+                notes=notes,
+                status='Pending'
+            )
+        messages.success(request, f"Laboratory test '{test_name}' requested for {patient.name}.")
+        return redirect('view_patient_lab_results', patient_id=patient.id)
+    return render(request, 'patients/request_labaratory_test.html', {'patient': patient, 'labaratories': labaratories})
 
 
 

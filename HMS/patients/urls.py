@@ -1,6 +1,7 @@
 # filepath: /workspaces/codespaces-blank/HMS/patients/urls.py
 from django.urls import path
 from . import views
+from  .views import request_labaratory_test
 
 urlpatterns = [
     path('', views.all_patients, name='all_patients'),  # Map the all_patients view
@@ -25,5 +26,6 @@ urlpatterns = [
     path('request_ultrasound/<int:patient_id>',views.request_ultrasound,name='request_ultrasound'),
     path('request_lab_test/<int:patient_id>/', views.request_lab_test, name='request_lab_test'),
     path('view_patient_lab_results/<int:patient_id>/', views.view_patient_lab_results, name='view_patient_lab_results'),
+    path('request_labaratory_test/<int:patient_id>/', request_labaratory_test, name='request_labaratory_test'),
 
 ]

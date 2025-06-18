@@ -1,8 +1,23 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.utils import timezone
+from datetime import datetime
 from patients.models import Patient_register
-from .models import Labaratory, LabaratoryTest, LabaratoryTestResult, LabaratoryAppointment
+from .models import Labaratory, LabaratoryTest, LabaratoryTestResult, LabaratoryAppointment, Laboratory_requests
 # Create your views here.
+
+
+def dashboard(request):
+    if request.user.is_authenticated:
+        user_role = request.user.userprofile.role
+        if user_role == 'lab_tech':
+            return render(request, 'labaratory/dashboard.html')
+        else:
+            messages.error(request, "You do not have permission to access this page.")
+            return redirect('home')
+    else:
+        messages.error(request, "You need to log in first.")
+        return redirect('login')
 def labaratory_create(request):
     if request.method == 'POST':
         labaratory_name = request.POST.get('labaratory_name')
@@ -262,5 +277,22 @@ def labaratory_test_result_update(request, labaratory_id, test_id, result_id):
     except Exception as e:
         messages.error(request, f"Error updating test result: {str(e)}")
         return redirect('patient_test_results', patient_id=result.patient.id)
-def labaratory_home(request):
-    return render(request, 'labaratory/labaratory_home.html')
+
+def view_laboratory_requests(request,):
+     requests = Laboratory_requests.objects.all()
+     return render(request, 'labaratory/laboratory_requests.html', {'requests': requests})
+
+def lab_dashboard(request):
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+    lab_results = LabaratoryTestResult.objects.all().order_by('-test_date')
+    if date_from:
+        lab_results = lab_results.filter(test_date__date__gte=date_from)
+    if date_to:
+        lab_results = lab_results.filter(test_date__date__lte=date_to)
+    context = {
+        'lab_results': lab_results,
+        'date_from': date_from,
+        'date_to': date_to,
+    }
+    return render(request, 'labaratory/dashboard.html', context)

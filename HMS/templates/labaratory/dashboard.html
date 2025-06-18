@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}Lab Test Dashboard{% endblock %}
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">Lab Tests Done (Most Recent First)</h2>
+    <form method="get" class="mb-4">
+        <div class="row g-2 align-items-end">
+            <div class="col-auto">
+                <label for="date_from" class="form-label">From:</label>
+                <input type="date" id="date_from" name="date_from" class="form-control" value="{{ date_from|default:'' }}">
+            </div>
+            <div class="col-auto">
+                <label for="date_to" class="form-label">To:</label>
+                <input type="date" id="date_to" name="date_to" class="form-control" value="{{ date_to|default:'' }}">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary">Filter</button>
+            </div>
+        </div>
+    </form>
+    <table class="table table-bordered table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Date</th>
+                <th>Patient</th>
+                <th>Test</th>
+                <th>Lab</th>
+                <th>Status</th>
+                <th>Result</th>
+                <th>View</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for result in lab_results %}
+            <tr>
+                <td>{{ result.test_date|date:'Y-m-d H:i' }}</td>
+                <td>{{ result.patient.name }}</td>
+                <td>{{ result.labaratory_test.test_name }}</td>
+                <td>{{ result.labaratory_test.labaratory.labaratory_name }}</td>
+                <td>{{ result.status }}</td>
+                <td>{{ result.test_result|truncatewords:10|default:'-' }}</td>
+                <td>
+                    <a href="{% url 'labaratory_test_result_detail' result.labaratory_test.labaratory.id result.labaratory_test.id result.id %}" class="btn btn-sm btn-outline-primary">View</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" class="text-center">No lab tests found for the selected period.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

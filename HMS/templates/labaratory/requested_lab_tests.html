@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Requested Lab Tests{% endblock %}
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">Requested Lab Tests</h2>
+    <table class="table table-bordered table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Patient</th>
+                <th>Test</th>
+                <th>Lab</th>
+                <th>Requested On</th>
+                <th>Status</th>
+                <th>Notes</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for request in requests %}
+            <tr>
+                <td>{{ request.patient.name }}</td>
+                <td>{{ request.labaratory_test.test_name }}</td>
+                <td>{{ request.labaratory_test.labaratory.labaratory_name }}</td>
+                <td>{{ request.test_date|date:'Y-m-d H:i' }}</td>
+                <td>{{ request.status }}</td>
+                <td>{{ request.notes|default:'-' }}</td>
+                <td>
+                    {% if request.status == 'Pending' %}
+                        <a href="{% url 'add_test_result' request.labaratory_test.id request.patient.id %}" class="btn btn-success btn-sm">Accept & Add Result</a>
+                        <form method="post" action="{% url 'decline_lab_request' request.id %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-sm">Decline</button>
+                        </form>
+                    {% else %}
+                        <span class="text-muted">No actions</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" class="text-center">No lab test requests found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
