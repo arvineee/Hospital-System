@@ -4,6 +4,37 @@
     <h2>Request Ultrasound for {{ patient.name }}</h2>
     <form method="post">
         {% csrf_token %}
+        <div class="mb-3">
+            <label for="ultrasound_type" class="form-label text-primary">Ultrasound Type</label>
+            <select class="form-select" id="ultrasound_type" name="ultrasound_type" required>
+                <option value="" disabled selected>Select Ultrasound Type</option>
+                <option value="abdominal">Abdominal Ultrasound</option>
+                <option value="pelvic">Pelvic Ultrasound</option>
+                <option value="cardiac">Cardiac Ultrasound</option>
+                <option value="thyroid">Thyroid Ultrasound</option>
+                <option value="musculoskeletal">Musculoskeletal Ultrasound</option>
+                <option value="vascular">Vascular Ultrasound</option>
+                <option value="obstetric">Obstetric Ultrasound</option>
+                <option value="other">Other</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="reason" class="form-label text-primary">Reason for Ultrasound</label>
+            <textarea class="form-control" id="reason" name="reason" rows="3" required></textarea>
+        </div>
+        <div class="mb-3">
+            <label for="priority" class="form-label text-primary">Priority Level</label>
+            <select class="form-select" id="priority" name="priority" required>
+                <option value="" disabled selected>Select Priority Level</option>
+                <option value="routine">Routine</option>
+                <option value="urgent">Urgent</option>
+                <option value="emergency">Emergency</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="comments" class="form-label text-primary">Additional Comments</label>
+            <textarea class="form-control" id="comments" name="comments" rows="3"></textarea>
+        </div>
         <button type="submit" class="btn btn-primary">Send Request to Radiology</button>
         <a href="{% url 'pat_view' patient.id %}" class="btn btn-secondary">Cancel</a>
     </form>

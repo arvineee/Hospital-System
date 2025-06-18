@@ -15,6 +15,7 @@ from django.utils import timezone
 from datetime import datetime,timedelta
 from django.db.models import Q 
 import logging
+from radiology.models import UltrasoundRequest
 
 logger = logging.getLogger(__name__)
 
@@ -527,10 +528,26 @@ def view_patient_ultrasounds(request, patient_id):
 @login_required
 def request_ultrasound(request, patient_id):
     patient = get_object_or_404(Patient_register, id=patient_id)
+    requests = UltrasoundRequest.objects.filter(patient=patient).order_by('-request_date')
     if request.method == 'POST':
-
-        messages.success(request, f"Ultrasound request for {patient.name} has been sent to Radiology.")
-        # Optionally, you can create a model to track requests, or just redirect to radiology add page
+        ultrasound_type = request.POST.get('ultrasound_type')
+        reason = request.POST.get('reason')
+        priority = request.POST.get('priority')
+        comments = request.POST.get('comments', '')
+        requester = request.user.username
+        requester_role = getattr(request.user, 'role', '') if hasattr(request.user, 'role') else ''
+        # Save the request
+        ultrasound_request = UltrasoundRequest.objects.create(
+            patient=patient,
+            ultrasound_type=ultrasound_type,
+            reason=reason,
+            priority=priority,
+            requester=requester,
+            requester_role=requester_role,
+            notes=comments,
+            status='pending'
+        )
+        messages.success(request, f"Ultrasound request for {ultrasound_type} has been created for {patient.name}.")
         return redirect('view_patient_ultrasounds', patient_id=patient.id)
     return render(request, 'patients/request_ultrasound.html', {'patient': patient})
 

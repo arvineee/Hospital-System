@@ -121,7 +121,7 @@ def ultrasound_detail(request, ultrasound_id):
 
 
 def ultrasound_requests_list(request):
-    requests = UltrasoundRequest.objects.filter(is_completed=False).order_by('-requested_at')
+    requests = UltrasoundRequest.objects.filter(is_completed=False).order_by('-request_date')
     return render(request, 'radiology/ultrasound_requests.html', {'requests': requests})
 
 def add_ultrasound_for_request(request, request_id):
