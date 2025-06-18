@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.contrib import messages
+from django.urls import reverse
 from .models import Patient_register, PatientHistory,Appointment
 from drugs.models import DrugIssue
 from django.contrib.auth.decorators import login_required
@@ -8,7 +9,7 @@ from drugs.models import Drug, DrugIssue
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 from labaratory.models import Labaratory
-from labaratory.models import LabaratoryTestResult
+from labaratory.models import LabaratoryTestResult, LabaratoryTest
 from radiology.models import Ultrasound
 from django.utils import timezone
 from datetime import datetime,timedelta
@@ -521,4 +522,43 @@ def view_patient_ultrasounds(request, patient_id):
         'patient': patient,
         'ultrasounds': ultrasounds
     })
+
+
+@login_required
+def request_ultrasound(request, patient_id):
+    patient = get_object_or_404(Patient_register, id=patient_id)
+    if request.method == 'POST':
+
+        messages.success(request, f"Ultrasound request for {patient.name} has been sent to Radiology.")
+        # Optionally, you can create a model to track requests, or just redirect to radiology add page
+        return redirect('view_patient_ultrasounds', patient_id=patient.id)
+    return render(request, 'patients/request_ultrasound.html', {'patient': patient})
+
+def request_lab_test(request, patient_id):
+    patient = get_object_or_404(Patient_register, id=patient_id)
+    available_tests = LabaratoryTest.objects.all()
+    if request.method == 'POST':
+        test_id = request.POST.get('test_id')
+        notes = request.POST.get('notes', '')
+        test = get_object_or_404(LabaratoryTest, id=test_id)
+        # Create a pending test result as a request
+        LabaratoryTestResult.objects.create(
+            labaratory_test=test,
+            patient=patient,
+            test_result='',
+            notes=notes,
+            status='Pending'
+        )
+        messages.success(request, f"Lab test '{test.test_name}' requested for {patient.name}.")
+        return redirect('pat_view', id=patient.id)
+    return render(request, 'patients/request_lab_test.html', {'patient': patient, 'available_tests': available_tests})
+
+@login_required
+def view_patient_lab_results(request, patient_id):
+    patient = get_object_or_404(Patient_register, id=patient_id)
+    results = LabaratoryTestResult.objects.filter(patient=patient).order_by('-test_date')
+    return render(request, 'patients/patient_lab_results.html', {'patient': patient, 'results': results})
+
+
+
 

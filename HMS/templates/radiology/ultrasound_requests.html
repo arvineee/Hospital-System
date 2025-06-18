@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <h2>Pending Ultrasound Requests</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Patient</th>
+                <th>Requested At</th>
+                <th>Notes</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for req in requests %}
+            <tr>
+                <td>{{ req.patient.name }}</td>
+                <td>{{ req.requested_at }}</td>
+                <td>{{ req.notes }}</td>
+                <td>
+                    <a href="{% url 'add_ultrasound_for_request' req.id %}" class="btn btn-success btn-sm">Accept & Create</a>
+                    <form method="post" action="{% url 'reject_ultrasound_request' req.id %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+                    </form>
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="4">No pending requests.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
