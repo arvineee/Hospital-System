@@ -83,7 +83,7 @@ WSGI_APPLICATION = "HMS.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": "db.sqlite3",
+        "NAME": "dbsqlite3",
         # "USER":"Arvine",
         # "PASSWORD":"987654321",
         # "HOST":"localhost",
