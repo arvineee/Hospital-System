@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load userprofile_extras %}
 
 {% block title %}Test Result Detail - {{ result.labaratory_test.test_name }}{% endblock %}
 
@@ -87,10 +88,21 @@
                         <i class="fas fa-edit"></i> Edit Result
                     </a>
                     {% endif %}
+                    {% with role=user|get_user_role %}
+                        {% if role == 'lab_tech' %}
                     <a href="{% url 'lab_dashboard'%}" 
                        class="btn btn-info">
                         <i class="fas fa-user"></i> Dashboard
                     </a>
+                        {% if role == 'Doctor'%}
+                         <a href="{% url 'pat_view' result.patient.id %}" 
+                           class="btn btn-info">
+                            <i class="fas fa-user"></i> Patient Profile
+                        </a>
+                        {% endif %}
+                    {% endif %} 
+
+                    {% endwith %}
                 </div>
             </div>
         </div>
