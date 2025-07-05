@@ -121,6 +121,41 @@
         </div>
     </div>
 
+    <!-- Ultrasound Charges -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h3 class="mb-0">Ultrasound Charges</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead class="table-secondary">
+                        <tr>
+                            <th>Type</th>
+                            <th>Date</th>
+                            <th>Findings</th>
+                            <th class="text-end">Price (KSH)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for us in ultrasounds %}
+                        <tr>
+                            <td>{{ us.ultrasound_type }}</td>
+                            <td>{{ us.date|date:"Y-m-d" }}</td>
+                            <td>{{ us.findings|default:'-' }}</td>
+                            <td class="text-end">{{ us.price }}.00</td>
+                        </tr>
+                        {% endfor %}
+                        <tr class="table-info">
+                            <td colspan="3" class="text-end"><strong>Total Ultrasound Charges:</strong></td>
+                            <td class="text-end"><strong>{{ bill.ultrasound_charge }}.00</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <!-- Bill Summary -->
     <div class="card mb-4">
         <div class="card-header bg-dark text-white">
@@ -144,6 +179,10 @@
                     <tr>
                         <td><strong>Laboratory Charges:</strong></td>
                         <td class="text-end">{{ bill.laboratory_charge }}.00</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Ultrasound Charges:</strong></td>
+                        <td class="text-end">{{ bill.ultrasound_charge }}.00</td>
                     </tr>
                     <tr class="table-dark">
                         <td><h4 class="mb-0"><strong>Total Bill:</strong></h4></td>

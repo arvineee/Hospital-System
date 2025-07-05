@@ -1,0 +1,8 @@
+LOAD DATABASE
+    FROM sqlite:///db.sqlite3
+    INTO pgsql://postgres:Fel28539257.@localhost:5433/postgres
+
+    WITH include drop, create tables,create indexes, reset sequences
+
+    SET work_men to '128MB',
+    maintainance work_men to '512MB';

@@ -257,12 +257,10 @@ def re_admit(request, id):
         patient.discharge_date = None
         patient.adm_date = datetime.now().date()
         
-        # Clear previous drug issues for this patient
-        DrugIssue.objects.filter(patient=patient).delete()
-        
+        # Do NOT clear previous records. All previous drug issues, lab results, and ultrasounds are kept.
         patient.save()
-        
-        messages.success(request, "Patient successfully re-admitted.")
+
+        messages.success(request, "Patient successfully re-admitted. Previous records have been kept.")
         return redirect('pat_view', id=id)  # Redirect to the patient's view page
     
     except Patient_register.DoesNotExist:
@@ -277,6 +275,8 @@ def billing(request, id):
         patient = get_object_or_404(Patient_register, id=id)
         drug_issues = DrugIssue.objects.filter(patient=patient)
         lab_results = LabaratoryTestResult.objects.filter(patient=patient)
+        # Only include ultrasounds for this admission (on or after adm_date)
+        ultrasounds = Ultrasound.objects.filter(patient=patient.name, date__gte=patient.adm_date)
 
         # Check if patient is already discharged
         if patient.is_discharged:
@@ -289,8 +289,8 @@ def billing(request, id):
         days_admitted = (current_date - admission_date).days or 1  # Minimum 1 day
 
         # Define charges
-        consultation_charge = 500
-        daily_room_charge = 100
+        consultation_charge = 100
+        daily_room_charge = 0
         total_room_charge = daily_room_charge * days_admitted
 
         # Calculate medication charges
@@ -305,21 +305,28 @@ def billing(request, id):
             for result in lab_results
         )
 
+        # Calculate ultrasound charges
+        ultrasound_total = sum(
+            us.price for us in ultrasounds
+        )
+
         # Calculate total bill
         total_bill = {
             'consultation_charge': consultation_charge,
             'room_charge': total_room_charge,
             'medication_charge': medication_total,
             'laboratory_charge': laboratory_total,
+            'ultrasound_charge': ultrasound_total,
             'days_admitted': days_admitted,
             'daily_room_rate': daily_room_charge,
-            'total': consultation_charge + total_room_charge + medication_total + laboratory_total
+            'total': consultation_charge + total_room_charge + medication_total + laboratory_total + ultrasound_total
         }
 
         context = {
             'patient': patient,
             'drug_issues': drug_issues,
             'lab_results': lab_results,
+            'ultrasounds': ultrasounds,
             'bill': total_bill,
             'admission_date': admission_date,
             'current_date': current_date,

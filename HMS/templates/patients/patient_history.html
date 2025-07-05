@@ -72,5 +72,8 @@
             {% endif %}
         </div>
     </div>
+        <a href="{% url 'pat_view' patient.id %}" class="mt-4 btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Patient
+        </a>
 </div>
 {% endblock %}

@@ -82,12 +82,12 @@ WSGI_APPLICATION = "HMS.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": "db.sqlite3",
-        # "USER":"Arvine",
-        # "PASSWORD":"987654321",
-        # "HOST":"localhost",
-        # "PORT":5432,
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "faraja",
+        "USER":"postgres",
+        "PASSWORD":"Fel28539257.",
+        "HOST":"localhost",
+        "PORT":5433,
     }
 }
 
@@ -116,7 +116,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "Africa/Nairobi"
 
 USE_I18N = True
 

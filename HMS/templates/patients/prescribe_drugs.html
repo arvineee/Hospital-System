@@ -8,11 +8,15 @@
 <div class="container">
     <form method="POST">
         {% csrf_token %}
+        <!-- Drug search bar -->
+        <div class="mb-3">
+            <input type="text" id="drug-search" class="form-control" placeholder="Search for a drug..." onkeyup="filterDrugs()">
+        </div>
         <div id="drug-list">
             <div class="row mb-3">
                 <div class="col-md-6">
                     <label for="drug_ids_0" class="form-label">Select Drug:</label>
-                    <select id="drug_ids_0" name="drug_ids" class="form-select" required>
+                    <select id="drug_ids_0" name="drug_ids" class="form-select drug-select" required>
                         <option value="">-- Select Drug --</option>
                         {% for drug in drugs %}
                         <option value="{{ drug.id }}">{{ drug.name }} ({{ drug.quantity }} available)</option>
@@ -42,7 +46,7 @@
         newRow.innerHTML = `
             <div class="col-md-6">
                 <label for="drug_ids_${drugRowIndex}" class="form-label">Select Drug:</label>
-                <select id="drug_ids_${drugRowIndex}" name="drug_ids" class="form-select" required>
+                <select id="drug_ids_${drugRowIndex}" name="drug_ids" class="form-select drug-select" required>
                     <option value="">-- Select Drug --</option>
                     {% for drug in drugs %}
                     <option value="{{ drug.id }}">{{ drug.name }} ({{ drug.quantity }} available)</option>
@@ -63,6 +67,23 @@
 
     function removeDrugRow(button) {
         button.parentElement.parentElement.remove();
+    }
+
+    // Drug search filter for all select elements
+    function filterDrugs() {
+        const search = document.getElementById('drug-search').value.toLowerCase();
+        const selects = document.querySelectorAll('.drug-select');
+        selects.forEach(select => {
+            for (let i = 0; i < select.options.length; i++) {
+                const option = select.options[i];
+                if (i === 0) {
+                    option.style.display = '';
+                    continue;
+                }
+                const text = option.text.toLowerCase();
+                option.style.display = text.includes(search) ? '' : 'none';
+            }
+        });
     }
 </script>
 {% endblock %}
