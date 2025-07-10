@@ -5,6 +5,7 @@ class Patient_register(models.Model):
     name = models.CharField(max_length=100)
     age = models.DecimalField(max_digits=3, decimal_places=1)
     contact = models.IntegerField(null=True)
+    residence = models.CharField(max_length=255, blank=True)  # New field
     adm_date = models.DateField(auto_now_add=True)
     sex = models.CharField(max_length=10)
     ward = models.CharField(max_length=100, default='OPD')
