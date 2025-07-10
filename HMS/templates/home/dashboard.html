@@ -2,63 +2,86 @@
 {% extends 'base.html' %}
 {% load static %}
 
-
-
-
-
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
 <div class="container mt-5">
-    <h1 class="text-center mb-5">Hospital Management System Dashboard</h1>
+    <!-- Hero Section -->
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-2 text-center">
+            <img src="{% static 'img/hospital1.jpg' %}" alt="Hospital Logo" class="rounded-circle shadow" width="100" height="100">
+        </div>
+        <div class="col-md-10">
+            <h1 class="display-5 fw-bold">Welcome to Faraja Family Health Hospital System</h1>
+            <p class="lead">Efficiently manage patients, drugs, labs, and radiology with a modern, user-friendly dashboard.</p>
+        </div>
+    </div>
 
-    <div class="carousel">
-        <div class="carousel-track">
-          <img src="{% static 'img/hospital2.jpg'%}" alt="1" class="carousel-img" width="400px" height="400px">
-          <img src="{% static 'img/hospital1.jpg'%}" alt="2" class="carousel-img" width="400px" height="400px">
-          <img src="{% static 'img/hospital3.jpg'%}" alt="3" class="carousel-img" width="400px" height="400px">
-          <img src="{% static 'img/hospital2.jpg'%}" alt="1" class="carousel-img" width="400px" height="400px">
-          <img src="{% static 'img/hospital1.jpg'%}" alt="2" class="carousel-img" width="400px" height="400px">
-          <img src="{% static 'img/hospital3.jpg'%}" alt="3" class="carousel-img mb-5" height="400px">
-        </div>
-        <button class="carousel-btn prev">⟨</button>
-        <button class="carousel-btn next">⟩</button>
-      </div>
-      
     <!-- Summary Cards -->
-    <div class="row text-center">
-        <div class="col-md-4">
-            <div class="card shadow-sm border-0 text-white bg-primary mb-4">
+    <div class="row text-center mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card shadow border-0 text-white bg-primary h-100">
                 <div class="card-body">
-                    <h5 class="card-title">Total Patients</h5>
-                    <p class="card-text display-4 fw-bold">{{ total_patients }}</p>
+                    <i class="fas fa-users fa-2x mb-2"></i>
+                    <h6 class="card-title">Total Patients</h6>
+                    <p class="card-text display-6 fw-bold">{{ total_patients }}</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card shadow-sm border-0 text-white bg-success mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card shadow border-0 text-white bg-success h-100">
                 <div class="card-body">
-                    <h5 class="card-title">Total Drugs</h5>
-                    <p class="card-text display-4 fw-bold">{{ total_drugs }}</p>
+                    <i class="fas fa-pills fa-2x mb-2"></i>
+                    <h6 class="card-title">Total Drugs</h6>
+                    <p class="card-text display-6 fw-bold">{{ total_drugs }}</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card shadow-sm border-0 text-white bg-danger mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card shadow border-0 text-white bg-danger h-100">
                 <div class="card-body">
-                    <h5 class="card-title">Drugs Issued</h5>
-                    <p class="card-text display-4 fw-bold">{{ total_drug_issues }}</p>
+                    <i class="fas fa-capsules fa-2x mb-2"></i>
+                    <h6 class="card-title">Drugs Issued</h6>
+                    <p class="card-text display-6 fw-bold">{{ total_drug_issues }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card shadow border-0 text-white bg-info h-100">
+                <div class="card-body">
+                    <i class="fas fa-vials fa-2x mb-2"></i>
+                    <h6 class="card-title">Lab Requests</h6>
+                    <p class="card-text display-6 fw-bold">{{ total_lab_requests|default:'0' }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body d-flex flex-wrap gap-3 justify-content-center">
+                    <a href="{% url 'pat_register' %}" class="btn btn-outline-primary btn-lg"><i class="fas fa-user-plus"></i> Register Patient</a>
+                    <a href="{% url 'all_patients' %}" class="btn btn-outline-secondary btn-lg"><i class="fas fa-users"></i> View Patients</a>
+                    <a href="{% url 'all_drugs' %}" class="btn btn-outline-success btn-lg"><i class="fas fa-pills"></i> View Drugs</a>
+                    <a href="{% url 'add_drug' %}" class="btn btn-outline-info btn-lg"><i class="fas fa-plus"></i> Add Drug</a>
+                    <a href="{% url 'view_appointments' %}" class="btn btn-outline-warning btn-lg"><i class="fas fa-calendar-check"></i> Appointments</a>
+                    <a href="{% url 'view_patient_lab_results' 1 %}" class="btn btn-outline-danger btn-lg"><i class="fas fa-vials"></i> Lab Results</a>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Recent Activities -->
-    <div class="row mt-5">
+    <div class="row mt-4">
         <div class="col-md-6">
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Recent Patients</h5>
+                    <h5 class="mb-0">Recent Admissions</h5>
                 </div>
                 <ul class="list-group list-group-flush">
                     {% for patient in recent_patients %}
@@ -66,7 +89,7 @@
                         <strong>{{ patient.name }}</strong> - Admitted on {{ patient.adm_date }}
                     </li>
                     {% empty %}
-                    <li class="list-group-item text-muted">No recent patients.</li>
+                    <li class="list-group-item text-muted">No recent admissions.</li>
                     {% endfor %}
                 </ul>
             </div>
@@ -88,23 +111,37 @@
             </div>
         </div>
     </div>
-
-  
-
-    <!-- Quick Links -->
-    <div class="row mt-5">
-        <div class="col-md-12">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-dark text-white">
-                    <h5 class="mb-0">Quick Links</h5>
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Recent Lab Requests</h5>
                 </div>
-                <div class="list-group list-group-flush">
-                    <a href="{% url 'all_patients' %}" class="list-group-item list-group-item-action">View All Patients</a>
-                    <a href="{% url 'pat_register' %}" class="list-group-item list-group-item-action">Register a New Patient</a>
-                    <a href="{% url 'all_drugs' %}" class="list-group-item list-group-item-action">View All Drugs</a>
-                    <a href="{% url 'add_drug' %}" class="list-group-item list-group-item-action">Add a New Drug</a>
-                    <a href="https://felixkirui.pythonanywhere.com/" class="list-group-item list-group-item-action mb-5">Blog website</a>
+                <ul class="list-group list-group-flush">
+                    {% for lab in recent_lab_requests %}
+                    <li class="list-group-item">
+                        <strong>{{ lab.labaratory_test.test_name }}</strong> for <strong>{{ lab.patient.name }}</strong> on {{ lab.test_date|date:'Y-m-d' }}
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item text-muted">No recent lab requests.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Recent Ultrasound Requests</h5>
                 </div>
+                <ul class="list-group list-group-flush">
+                    {% for us in recent_ultrasound_requests %}
+                    <li class="list-group-item">
+                        <strong>{{ us.ultrasound_type }}</strong> for <strong>{{ us.patient.name }}</strong> on {{ us.request_date|date:'Y-m-d' }}
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item text-muted">No recent ultrasound requests.</li>
+                    {% endfor %}
+                </ul>
             </div>
         </div>
     </div>

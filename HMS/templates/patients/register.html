@@ -1,39 +1,62 @@
-<!-- filepath: /workspaces/codespaces-blank/HMS/templates/patients/register.html -->
 {% extends 'base.html' %}
+{% load static %}
+
 
 {% block title %}Patient Registration{% endblock %}
 
 {% block content %}
-<h1 class="text-center mb-4">Patient Registration Form</h1>
-<div class="container">
-    <form method="POST" action="{% url 'pat_register' %}">
-        {% csrf_token %}
-        <div class="mb-3">
-            <label for="name" class="form-label">Name:</label>
-            <input type="text" id="name" name="name" class="form-control"  autofocus required>
+<div class="container d-flex justify-content-center align-items-center min-vh-100">
+    <div class="card shadow-lg p-4 w-100" style="max-width: 500px;">
+        <div class="text-center mb-4">
+            <img src="{% static 'img/hospital1.jpg' %}" alt="Hospital Logo" class="rounded-circle shadow mb-2" width="70" height="70">
+            <h2 class="fw-bold mt-2">Patient Registration</h2>
+            <p class="text-muted">Fill in the details to register a new patient</p>
         </div>
-        <div class="mb-3">
-            <label for="age" class="form-label">Age:</label>
-            <input type="number" id="age" name="age" class="form-control" required>
-        </div>
-        <div class="mb-3">
-            <label for="contact" class="form-label">Contact:</label>
-            <input type="text" id="contact" name="contact" class="form-control"  placeholder="e.g. 0712345678"  title="Please enter a valid 10-digit phone number" >
-        </div>
-        <div class="mb-3">
-            <label for="ward" class="form-label">Ward:</label>
-            <input type="text" id="ward" name="ward" class="form-control" value="Out Patient" required>
-        </div>
-        <div class="mb-3">
-            <label for="sex" class="form-label">Sex:</label>
-            <select id="sex" name="sex" class="form-select" required>
-                <option selected disabled value="">Select</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
-            </select>
-        </div>
-        <button type="submit" class="btn btn-success">Register</button>
-    </form>
+        <form method="POST" action="{% url 'pat_register' %}">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="name" class="form-label">Name</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-person"></i></span>
+                    <input type="text" id="name" name="name" class="form-control">
+                </div>
+            </div>
+            <div class="mb-3">
+                <label for="age" class="form-label">Age</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-calendar"></i></span>
+                    <input type="number" id="age" name="age" class="form-control">
+                </div>
+            </div>
+            <div class="mb-3">
+                <label for="contact" class="form-label">Contact</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-telephone"></i></span>
+                    <input type="text" id="contact" name="contact" class="form-control" placeholder="e.g. 0712345678">
+                </div>
+            </div>
+            <div class="mb-3">
+                <label for="ward" class="form-label">Ward</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-hospital"></i></span>
+                    <input type="text" id="ward" name="ward" class="form-control" value="Out Patient">
+                </div>
+            </div>
+            <div class="mb-4">
+                <label for="sex" class="form-label">Sex</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-gender-ambiguous"></i></span>
+                    <select id="sex" name="sex" class="form-select">
+                        <option selected disabled value="">Select</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-success w-100 py-2 fw-bold">Register</button>
+        </form>
+    </div>
 </div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 {% endblock %}
