@@ -1,36 +1,48 @@
-from .models import Billing
+from .models import Billing, PaymentHistory
 # --- Update Payment View ---
 from django.views.decorators.http import require_http_methods
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 
+
 @login_required
 @require_http_methods(["GET", "POST"])
 def update_payment(request, bill_id):
+    from decimal import Decimal
     bill = get_object_or_404(Billing, id=bill_id)
     patient = bill.patient
     if request.method == "POST":
         try:
-            paid_amount = float(request.POST.get("paid_amount", 0))
+            paid_amount = Decimal(request.POST.get("paid_amount", 0))
             payment_method = request.POST.get("payment_method", "")
             payment_reference = request.POST.get("payment_reference", "")
-            is_paid = request.POST.get("is_paid") == "True"
             # Validation
-            if paid_amount < 0 or paid_amount > float(bill.total_amount):
+            if paid_amount < 0 or paid_amount > bill.total_amount:
                 messages.error(request, "Invalid payment amount.")
                 return render(request, "patients/update_payment.html", {"bill": bill, "patient": patient})
-            bill.paid_amount = paid_amount
-            bill.due_amount = float(bill.total_amount) - paid_amount
+            # Record payment history
+            PaymentHistory.objects.create(
+                bill=bill,
+                paid_amount=paid_amount,
+                payment_method=payment_method,
+                payment_reference=payment_reference,
+                paid_by=request.user
+            )
+            # Update bill
+            bill.paid_amount += paid_amount
+            bill.due_amount = bill.total_amount - bill.paid_amount
             bill.payment_method = payment_method
             bill.payment_reference = payment_reference
-            bill.is_paid = is_paid
-            bill.save()
+            bill.updated_at = timezone.now()
+            bill.update_status()
             messages.success(request, "Payment status updated successfully.")
             return redirect("billing", id=patient.id)
         except Exception as e:
             messages.error(request, f"Error updating payment: {str(e)}")
             print(e)
-    return render(request, "patients/update_payment.html", {"bill": bill, "patient": patient})
+    # Get payment history for display
+    payment_history = bill.payment_history.order_by('-timestamp')
+    return render(request, "patients/update_payment.html", {"bill": bill, "patient": patient, "payment_history": payment_history})
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.contrib import messages
@@ -316,13 +328,14 @@ def billing(request, id):
         current_date = datetime.now().date()
         days_admitted = (current_date - admission_date).days or 1
 
-        # Charges
-        consultation_charge = 100
-        daily_room_charge = 0
-        total_room_charge = daily_room_charge * days_admitted
-        medication_total = sum(issue.drug.price * issue.quantity_issued for issue in drug_issues)
-        laboratory_total = sum(result.labaratory_test.test_price for result in lab_results)
-        ultrasound_total = sum(us.price for us in ultrasounds)
+        # Charges (use Decimal for all monetary values)
+        from decimal import Decimal
+        consultation_charge = Decimal('100.00')
+        daily_room_charge = Decimal('0.00')
+        total_room_charge = daily_room_charge * Decimal(days_admitted)
+        medication_total = sum(Decimal(str(issue.drug.price)) * issue.quantity_issued for issue in drug_issues)
+        laboratory_total = sum(Decimal(str(result.labaratory_test.test_price)) for result in lab_results)
+        ultrasound_total = sum(Decimal(str(us.price)) for us in ultrasounds)
         total = consultation_charge + total_room_charge + medication_total + laboratory_total + ultrasound_total
 
         # Prepare details for Billing model
@@ -337,27 +350,25 @@ def billing(request, id):
         }
 
         # Get or create a billing record for this admission
-        from decimal import Decimal
-        total_decimal = Decimal(str(total))
         bill_obj, created = Billing.objects.get_or_create(
             patient=patient,
-            total_amount=total_decimal,
             defaults={
+                'total_amount': total,
                 'paid_amount': Decimal('0.00'),
-                'due_amount': total_decimal,
+                'due_amount': total,
                 'is_paid': False,
                 'details': details,
                 'generated_by': request.user if request.user.is_authenticated else None,
             }
         )
-        # If bill exists but details/amount changed (e.g. new charges), update
-        if not created:
-            bill_obj.total_amount = total_decimal
-            bill_obj.due_amount = total_decimal - bill_obj.paid_amount
-            bill_obj.details = details
-            bill_obj.save()
+        # Always update bill with latest totals/details
+        bill_obj.total_amount = total
+        bill_obj.due_amount = total - bill_obj.paid_amount
+        bill_obj.details = details
+        bill_obj.save()
 
         # Prepare context for template
+        payment_history = bill_obj.payment_history.order_by('-timestamp')
         context = {
             'patient': patient,
             'drug_issues': drug_issues,
@@ -366,6 +377,7 @@ def billing(request, id):
             'bill': bill_obj,
             'admission_date': admission_date,
             'current_date': current_date,
+            'payment_history': payment_history,
         }
         return render(request, 'patients/billing.html', context)
     except Patient_register.DoesNotExist:

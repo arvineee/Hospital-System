@@ -72,6 +72,10 @@ class Appointment(models.Model):
         return f"Dr. {self.user.get_full_name()} - {self.specialty}"
 
 # Modern Billing model
+
+# --- Enhanced Billing Model ---
+from django.utils import timezone
+
 class Billing(models.Model):
     PAYMENT_METHODS = [
         ("cash", "Cash"),
@@ -89,5 +93,45 @@ class Billing(models.Model):
     details = models.JSONField(default=dict, blank=True)  # Store breakdown (medication, lab, ultrasound, etc)
     generated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
 
+    # New: Track status (Paid, Partial, Overdue)
+    STATUS_CHOICES = [
+        ("paid", "Paid"),
+        ("partial", "Partially Paid"),
+        ("unpaid", "Unpaid"),
+        ("overdue", "Overdue"),
+    ]
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="unpaid")
+
+    # New: Overdue flag and due date
+    due_date = models.DateField(null=True, blank=True)
+    is_overdue = models.BooleanField(default=False)
+
+    def update_status(self):
+        if self.due_amount <= 0:
+            self.status = "paid"
+            self.is_paid = True
+            self.is_overdue = False
+        elif self.paid_amount > 0:
+            self.status = "partial"
+            self.is_paid = False
+            self.is_overdue = self.due_date and self.due_date < timezone.now().date()
+        else:
+            self.status = "unpaid"
+            self.is_paid = False
+            self.is_overdue = self.due_date and self.due_date < timezone.now().date()
+        self.save(update_fields=["status", "is_paid", "is_overdue"])
+
     def __str__(self):
         return f"Bill for {self.patient.name} on {self.created_at.strftime('%Y-%m-%d')} (Total: {self.total_amount})"
+
+# --- Payment History Model ---
+class PaymentHistory(models.Model):
+    bill = models.ForeignKey(Billing, on_delete=models.CASCADE, related_name="payment_history")
+    paid_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    payment_method = models.CharField(max_length=10, choices=Billing.PAYMENT_METHODS)
+    payment_reference = models.CharField(max_length=100, blank=True)
+    paid_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Payment of {self.paid_amount} for Bill {self.bill.id} on {self.timestamp.strftime('%Y-%m-%d %H:%M')}"

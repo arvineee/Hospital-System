@@ -53,9 +53,9 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td>{{ bill.days_admitted }}</td>
-                        <td>{{ bill.daily_room_rate }}.00</td>
-                        <td class="text-end">{{ bill.room_charge }}.00</td>
+                        <td>{{ bill.details.days_admitted }}</td>
+                        <td>{{ bill.details.daily_room_rate|floatformat:2 }}</td>
+                        <td class="text-end">{{ bill.details.room_charge|floatformat:2 }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -83,13 +83,13 @@
                         <tr>
                             <td>{{ issue.drug.name }}</td>
                             <td>{{ issue.quantity_issued }}</td>
-                            <td>{{ issue.drug.price }}.00</td>
-                            <td class="text-end">{{ issue.drug.price|multiply:issue.quantity_issued }}.00</td>
+                            <td>{{ issue.drug.price|floatformat:2 }}</td>
+                            <td class="text-end">{{ issue.drug.price|multiply:issue.quantity_issued|floatformat:2 }}</td>
                         </tr>
                         {% endfor %}
                         <tr class="table-info">
                             <td colspan="3" class="text-end"><strong>Total Medication Charges:</strong></td>
-                            <td class="text-end"><strong>{{ bill.medication_charge }}.00</strong></td>
+                            <td class="text-end"><strong>{{ bill.details.medication_charge|floatformat:2 }}</strong></td>
                         </tr>
                     </tbody>
                 </table>
@@ -119,12 +119,12 @@
                             <td>{{ result.labaratory_test.test_name }}</td>
                             <td>{{ result.labaratory_test.labaratory.labaratory_name }}</td>
                             <td>{{ result.test_date|date:"Y-m-d" }}</td>
-                            <td class="text-end">{{ result.labaratory_test.test_price }}.00</td>
+                            <td class="text-end">{{ result.labaratory_test.test_price|floatformat:2 }}</td>
                         </tr>
                         {% endfor %}
                         <tr class="table-info">
                             <td colspan="3" class="text-end"><strong>Total Laboratory Charges:</strong></td>
-                            <td class="text-end"><strong>{{ bill.laboratory_charge }}.00</strong></td>
+                            <td class="text-end"><strong>{{ bill.details.laboratory_charge|floatformat:2 }}</strong></td>
                         </tr>
                     </tbody>
                 </table>
@@ -154,12 +154,12 @@
                             <td>{{ us.ultrasound_type }}</td>
                             <td>{{ us.date|date:"Y-m-d" }}</td>
                             <td>{{ us.findings|default:'-' }}</td>
-                            <td class="text-end">{{ us.price }}.00</td>
+                            <td class="text-end">{{ us.price|floatformat:2 }}</td>
                         </tr>
                         {% endfor %}
                         <tr class="table-info">
                             <td colspan="3" class="text-end"><strong>Total Ultrasound Charges:</strong></td>
-                            <td class="text-end"><strong>{{ bill.ultrasound_charge }}.00</strong></td>
+                            <td class="text-end"><strong>{{ bill.details.ultrasound_charge|floatformat:2 }}</strong></td>
                         </tr>
                     </tbody>
                 </table>
@@ -177,27 +177,27 @@
                 <tbody>
                     <tr>
                         <td><strong>Consultation Charge:</strong></td>
-                        <td class="text-end">{{ bill.consultation_charge }}.00</td>
+                        <td class="text-end">{{ bill.details.consultation_charge|floatformat:2 }}</td>
                     </tr>
                     <tr>
                         <td><strong>Room Charges:</strong></td>
-                        <td class="text-end">{{ bill.room_charge }}.00</td>
+                        <td class="text-end">{{ bill.details.room_charge|floatformat:2 }}</td>
                     </tr>
                     <tr>
                         <td><strong>Medication Charges:</strong></td>
-                        <td class="text-end">{{ bill.medication_charge }}.00</td>
+                        <td class="text-end">{{ bill.details.medication_charge|floatformat:2 }}</td>
                     </tr>
                     <tr>
                         <td><strong>Laboratory Charges:</strong></td>
-                        <td class="text-end">{{ bill.laboratory_charge }}.00</td>
+                        <td class="text-end">{{ bill.details.laboratory_charge|floatformat:2 }}</td>
                     </tr>
                     <tr>
                         <td><strong>Ultrasound Charges:</strong></td>
-                        <td class="text-end">{{ bill.ultrasound_charge }}.00</td>
+                        <td class="text-end">{{ bill.details.ultrasound_charge|floatformat:2 }}</td>
                     </tr>
                     <tr class="table-dark">
                         <td><h4 class="mb-0"><strong>Total Bill:</strong></h4></td>
-                        <td class="text-end"><h4 class="mb-0">KSH {{ bill.total }}.00</h4></td>
+                        <td class="text-end"><h4 class="mb-0">KSH {{ bill.total_amount|floatformat:2 }}</h4></td>
                     </tr>
                 </tbody>
             </table>
