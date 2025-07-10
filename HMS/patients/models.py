@@ -16,11 +16,27 @@ class Patient_register(models.Model):
         return self.name
     
 class PatientHistory(models.Model):
+
     patient = models.ForeignKey(Patient_register, on_delete=models.CASCADE)
     date = models.DateField(auto_now_add=True)
-    diagnosis = models.CharField(max_length=255,null=False)
-    notes = models.TextField()
+    signs = models.TextField(blank=True)
+    symptoms = models.TextField(blank=True)
+    temperature = models.DecimalField(max_digits=4, decimal_places=1, null=True, blank=True)
+    blood_pressure = models.CharField(max_length=20, blank=True)
+    pulse = models.IntegerField(null=True, blank=True)
+    respiratory_rate = models.IntegerField(null=True, blank=True)
+    spo2 = models.IntegerField(null=True, blank=True)
+    hpi = models.TextField("History of Present Illness", blank=True)
+    # Diagnosis and notes come last
+    diagnosis = models.CharField(max_length=255, null=True, blank=True)
+    notes = models.TextField(blank=True)
     doctor = models.CharField(max_length=100, null=True, blank=True)
+    # Status for draft/finalized
+    STATUS_CHOICES = [
+        ("draft", "Draft"),
+        ("final", "Finalized"),
+    ]
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="draft")
 
 
     def __str__(self):

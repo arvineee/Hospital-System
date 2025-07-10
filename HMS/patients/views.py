@@ -343,56 +343,59 @@ def billing(request, id):
 def patient_history(request, id):
     try:
         patient = Patient_register.objects.get(id=id)
-        drugs = Drug.objects.all()
-        history = PatientHistory.objects.filter(patient=patient).order_by('-date')
-
-        if request.method == 'POST':
-            # Retrieve form data
-            diagnosis = request.POST.get('diagnosis')
-            notes = request.POST.get('notes')
-            doctor = request.user
-            # Validate required fields
-            if not all([diagnosis, notes, doctor]):
-                messages.error(request, "Diagnosis, notes, and doctor name are required.")
-                return render(request, 'patients/patient_history.html', {
-                    'patient': patient,
-                    'history': history,
-                    'doctor': doctor,
-                })
-
-            try:
-                # Create a new history record
-                history_entry = PatientHistory(
-                    patient=patient,
-                    diagnosis=diagnosis,
-                    notes=notes,
-                    doctor=doctor
-                )
-
-                history_entry.save()
-                messages.success(request, "Patient history successfully updated.")
-                return redirect('patient_history', id=id)
-
-            except Exception as e:
-                messages.error(request, f"Error saving history: {str(e)}")
-                return render(request, 'patients/patient_history.html', {
-                    'patient': patient,
-                    'history': history,
-                    'doctor': doctor,
-                })
-
-        # GET request - display history
-        return render(request, 'patients/patient_history.html', {
-            'patient': patient,
-            'history': history,
-        })
-
     except Patient_register.DoesNotExist:
         messages.error(request, "Patient not found.")
         return redirect('all_patients')
     except Exception as e:
         messages.error(request, f"An error occurred: {str(e)}")
         return redirect('all_patients')
+
+    drugs = Drug.objects.all()
+    history = PatientHistory.objects.filter(patient=patient).order_by('-date')
+    from .forms import PatientHistoryForm
+    if request.method == 'POST':
+        form = PatientHistoryForm(request.POST)
+        if form.is_valid():
+            history_entry = form.save(commit=False)
+            history_entry.patient = patient
+            history_entry.doctor = request.user.get_full_name() or str(request.user)
+            history_entry.save()
+            messages.success(request, "Patient history successfully updated.")
+            return redirect('patient_history', id=id)
+        else:
+            messages.error(request, "Please correct the errors below.")
+    else:
+        form = PatientHistoryForm()
+
+    return render(request, 'patients/patient_history.html', {
+        'patient': patient,
+        'history': history,
+        'form': form,
+        'doctor': request.user,
+    })
+
+
+def edit_patient_history(request, history_id):
+    history_entry = get_object_or_404(PatientHistory, id=history_id)
+    if request.method == 'POST':
+        # Get all fields from POST
+        history_entry.signs = request.POST.get('signs', '')
+        history_entry.symptoms = request.POST.get('symptoms', '')
+        history_entry.temperature = request.POST.get('temperature') or None
+        history_entry.blood_pressure = request.POST.get('blood_pressure', '')
+        history_entry.pulse = request.POST.get('pulse') or None
+        history_entry.respiratory_rate = request.POST.get('respiratory_rate') or None
+        history_entry.spo2 = request.POST.get('spo2') or None
+        history_entry.hpi = request.POST.get('hpi', '')
+        history_entry.diagnosis = request.POST.get('diagnosis', '')
+        history_entry.notes = request.POST.get('notes', '')
+        history_entry.status = request.POST.get('status', 'draft')
+        history_entry.save()
+        messages.success(request, "Patient history updated.")
+        return redirect('patient_history', id=history_entry.patient.id)
+    return render(request, 'patients/edit_patient_history.html', {
+        'history_entry': history_entry,
+    })
 
 @login_required
 def schedule_appointment(request, patient_id=None):
