@@ -17,6 +17,7 @@ urlpatterns = [
     path("patient_discharge/<int:id>/", views.patient_discharge, name="patient_discharge"),
     path("re_admit/<int:id>/", views.re_admit, name="re_admit"),
     path("billing/<int:id>/", views.billing, name="billing"),
+    path('update_payment/<int:bill_id>/', views.update_payment, name='update_payment'),
     path("patient_history/<int:id>/", views.patient_history, name="patient_history"),
     path("edit_patient_history/<int:history_id>/", views.edit_patient_history, name="edit_patient_history"),
     path('schedule/', views.schedule_appointment, name='schedule_appointment'),
@@ -28,5 +29,6 @@ urlpatterns = [
     path('request_lab_test/<int:patient_id>/', views.request_lab_test, name='request_lab_test'),
     path('view_patient_lab_results/<int:patient_id>/', views.view_patient_lab_results, name='view_patient_lab_results'),
     path('request_labaratory_test/<int:patient_id>/', request_labaratory_test, name='request_labaratory_test'),
+    
 
 ]

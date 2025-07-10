@@ -1,3 +1,36 @@
+from .models import Billing
+# --- Update Payment View ---
+from django.views.decorators.http import require_http_methods
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def update_payment(request, bill_id):
+    bill = get_object_or_404(Billing, id=bill_id)
+    patient = bill.patient
+    if request.method == "POST":
+        try:
+            paid_amount = float(request.POST.get("paid_amount", 0))
+            payment_method = request.POST.get("payment_method", "")
+            payment_reference = request.POST.get("payment_reference", "")
+            is_paid = request.POST.get("is_paid") == "True"
+            # Validation
+            if paid_amount < 0 or paid_amount > float(bill.total_amount):
+                messages.error(request, "Invalid payment amount.")
+                return render(request, "patients/update_payment.html", {"bill": bill, "patient": patient})
+            bill.paid_amount = paid_amount
+            bill.due_amount = float(bill.total_amount) - paid_amount
+            bill.payment_method = payment_method
+            bill.payment_reference = payment_reference
+            bill.is_paid = is_paid
+            bill.save()
+            messages.success(request, "Payment status updated successfully.")
+            return redirect("billing", id=patient.id)
+        except Exception as e:
+            messages.error(request, f"Error updating payment: {str(e)}")
+            print(e)
+    return render(request, "patients/update_payment.html", {"bill": bill, "patient": patient})
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.contrib import messages
@@ -271,69 +304,70 @@ def re_admit(request, id):
         return redirect('all_patients')
 
 def billing(request, id):
+    from .models import Billing
     try:
         patient = get_object_or_404(Patient_register, id=id)
         drug_issues = DrugIssue.objects.filter(patient=patient)
         lab_results = LabaratoryTestResult.objects.filter(patient=patient)
-        # Only include ultrasounds for this admission (on or after adm_date)
         ultrasounds = Ultrasound.objects.filter(patient=patient.name, date__gte=patient.adm_date)
-
-        # Check if patient is already discharged
-        if patient.is_discharged:
-            messages.error(request, "Patient is already discharged and billed.")
-            return redirect('pat_view', id=id)
 
         # Calculate billing period
         admission_date = patient.adm_date
         current_date = datetime.now().date()
-        days_admitted = (current_date - admission_date).days or 1  # Minimum 1 day
+        days_admitted = (current_date - admission_date).days or 1
 
-        # Define charges
+        # Charges
         consultation_charge = 100
         daily_room_charge = 0
         total_room_charge = daily_room_charge * days_admitted
+        medication_total = sum(issue.drug.price * issue.quantity_issued for issue in drug_issues)
+        laboratory_total = sum(result.labaratory_test.test_price for result in lab_results)
+        ultrasound_total = sum(us.price for us in ultrasounds)
+        total = consultation_charge + total_room_charge + medication_total + laboratory_total + ultrasound_total
 
-        # Calculate medication charges
-        medication_total = sum(
-            issue.drug.price * issue.quantity_issued 
-            for issue in drug_issues
-        )
-
-        # Calculate laboratory charges
-        laboratory_total = sum(
-            result.labaratory_test.test_price
-            for result in lab_results
-        )
-
-        # Calculate ultrasound charges
-        ultrasound_total = sum(
-            us.price for us in ultrasounds
-        )
-
-        # Calculate total bill
-        total_bill = {
-            'consultation_charge': consultation_charge,
-            'room_charge': total_room_charge,
-            'medication_charge': medication_total,
-            'laboratory_charge': laboratory_total,
-            'ultrasound_charge': ultrasound_total,
+        # Prepare details for Billing model
+        details = {
+            'consultation_charge': float(consultation_charge),
+            'room_charge': float(total_room_charge),
+            'medication_charge': float(medication_total),
+            'laboratory_charge': float(laboratory_total),
+            'ultrasound_charge': float(ultrasound_total),
             'days_admitted': days_admitted,
-            'daily_room_rate': daily_room_charge,
-            'total': consultation_charge + total_room_charge + medication_total + laboratory_total + ultrasound_total
+            'daily_room_rate': float(daily_room_charge),
         }
 
+        # Get or create a billing record for this admission
+        from decimal import Decimal
+        total_decimal = Decimal(str(total))
+        bill_obj, created = Billing.objects.get_or_create(
+            patient=patient,
+            total_amount=total_decimal,
+            defaults={
+                'paid_amount': Decimal('0.00'),
+                'due_amount': total_decimal,
+                'is_paid': False,
+                'details': details,
+                'generated_by': request.user if request.user.is_authenticated else None,
+            }
+        )
+        # If bill exists but details/amount changed (e.g. new charges), update
+        if not created:
+            bill_obj.total_amount = total_decimal
+            bill_obj.due_amount = total_decimal - bill_obj.paid_amount
+            bill_obj.details = details
+            bill_obj.save()
+
+        # Prepare context for template
         context = {
             'patient': patient,
             'drug_issues': drug_issues,
             'lab_results': lab_results,
             'ultrasounds': ultrasounds,
-            'bill': total_bill,
+            'bill': bill_obj,
             'admission_date': admission_date,
             'current_date': current_date,
         }
-
         return render(request, 'patients/billing.html', context)
-
     except Patient_register.DoesNotExist:
         messages.error(request, "Patient not found.")
         return redirect('all_patients')

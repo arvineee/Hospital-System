@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 class Patient_register(models.Model):
     name = models.CharField(max_length=100)
     age = models.DecimalField(max_digits=3, decimal_places=1)
-    contact = models.IntegerField(null=True)
+    contact = models.IntegerField(null=True, blank=True)
     residence = models.CharField(max_length=255, blank=True)  # New field
     adm_date = models.DateField(auto_now_add=True)
     sex = models.CharField(max_length=10)
@@ -67,13 +67,27 @@ class Appointment(models.Model):
     def __str__(self):
         return f"{self.patient.name} - {self.schedule_date.strftime('%Y-%m-%d %H:%M')}"
 
-class DoctorProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    specialty = models.CharField(max_length=100)
-    availability = models.CharField(max_length=200,
-                   default="Mon-Fri: 9AM-5PM")
-    license_number = models.CharField(max_length=50)
-    is_consultant = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Dr. {self.user.get_full_name()} - {self.specialty}"
+
+# Modern Billing model
+class Billing(models.Model):
+    PAYMENT_METHODS = [
+        ("cash", "Cash"),
+        ("paybill", "Paybill (Mobile Money)")
+    ]
+    patient = models.ForeignKey(Patient_register, on_delete=models.CASCADE, related_name='billings')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    paid_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    due_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    is_paid = models.BooleanField(default=False)
+    payment_method = models.CharField(max_length=10, choices=PAYMENT_METHODS, blank=True)
+    payment_reference = models.CharField(max_length=100, blank=True)  # e.g. transaction code
+    details = models.JSONField(default=dict, blank=True)  # Store breakdown (medication, lab, ultrasound, etc)
+    generated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+
+    def __str__(self):
+        return f"Bill for {self.patient.name} on {self.created_at.strftime('%Y-%m-%d')} (Total: {self.total_amount})"
