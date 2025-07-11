@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Pharmacy Dashboard</h2>
+
+<h3>Stocked Drugs</h3>
+<table border="1">
+    <tr><th>Name</th><th>Stock</th><th>Expiry</th><th>Price</th></tr>
+    {% for drug in drugs %}
+    <tr>
+        <td>{{ drug.name }}</td>
+        <td>{{ drug.quantity }}</td>
+        <td>{{ drug.expiry_date }}</td>
+        <td>{{ drug.price }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<h3>Pending Prescriptions (Not Yet Given)</h3>
+<table border="1">
+    <tr><th>Patient</th><th>Drug</th><th>Qty</th><th>Date</th><th>Action</th></tr>
+    {% for issue in pending_issues %}
+    <tr>
+        <td>{{ issue.patient.name }}</td>
+        <td>{{ issue.drug.name }}</td>
+        <td>{{ issue.quantity_issued }}</td>
+        <td>{{ issue.issue_date }}</td>
+        <td>
+            <form method="post" style="display:inline;">{% csrf_token %}
+                <input type="hidden" name="action" value="mark_given">
+                <input type="hidden" name="issue_id" value="{{ issue.id }}">
+                <button type="submit">Mark as Given</button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+<h3>Issued Drugs History</h3>
+<table border="1">
+    <tr><th>Patient</th><th>Drug</th><th>Qty</th><th>Date</th><th>Action</th></tr>
+    {% for issue in issued_drugs %}
+    <tr>
+        <td>{{ issue.patient.name }}</td>
+        <td>{{ issue.drug.name }}</td>
+        <td>{{ issue.quantity_issued }}</td>
+        <td>{{ issue.issue_date }}</td>
+        <td>
+            <form method="post" style="display:inline;">{% csrf_token %}
+                <input type="hidden" name="action" value="mark_not_given">
+                <input type="hidden" name="issue_id" value="{{ issue.id }}">
+                <button type="submit">Mark as Not Given</button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+<h3>Outstanding Medication Bills</h3>
+<table border="1">
+    <tr><th>Patient</th><th>Total Amount</th><th>Status</th><th>Action</th></tr>
+    {% for bill in bills %}
+    <tr>
+        <td>{{ bill.patient.name }}</td>
+        <td>{{ bill.total_amount }}</td>
+        <td>{{ bill.status }}</td>
+        <td>
+            {% if bill.status != 'paid' %}
+            <form method="post" style="display:inline;">{% csrf_token %}
+                <input type="hidden" name="action" value="mark_bill_paid">
+                <input type="hidden" name="bill_id" value="{{ bill.id }}">
+                <button type="submit">Mark as Paid</button>
+            </form>
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+<h3>Over the Counter (OTC) Sales</h3>
+<a href="{% url 'otc_sale' %}">New OTC Sale</a> |
+<a href="{% url 'otc_sales_list' %}">View OTC Sales History</a>
+
+{% endblock %}

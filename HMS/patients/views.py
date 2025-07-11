@@ -6,7 +6,6 @@ from django.contrib.auth.decorators import login_required
 from django.core.mail import mail_admins
 from django.conf import settings
 from django.shortcuts import render, redirect
-from django.http import HttpResponse
 from django.contrib import messages
 from django.urls import reverse
 from .models import Patient_register, PatientHistory,Appointment
@@ -66,6 +65,7 @@ def update_payment(request, bill_id):
 
             # --- Notify Admins on Payment ---
             try:
+                Hospital_name = getattr(settings, 'HOSPITAL_NAME', 'HMS Hospital System')
                 from django.core.mail import EmailMultiAlternatives
                 from io import BytesIO
                 from reportlab.lib.pagesizes import A5
@@ -74,7 +74,7 @@ def update_payment(request, bill_id):
                 from reportlab.pdfgen import canvas
                 from reportlab.lib.styles import getSampleStyleSheet
                 from reportlab.platypus import Paragraph, Table, TableStyle, SimpleDocTemplate, Spacer
-                subject = f"[HMS] Payment Received for {patient.name} (Bill #{bill.id})"
+                subject = f"[{Hospital_name}] Payment Received for {patient.name} (Bill #{bill.id})"
                 text_message = (
                     f"A payment has been made for patient: {patient.name}\n"
                     f"Patient ID: {patient.id}\n"
@@ -157,14 +157,25 @@ def update_payment(request, bill_id):
                 msg.attach_alternative(html_message, "text/html")
                 msg.attach(f"receipt_bill_{bill.id}.pdf", pdf_data, "application/pdf")
                 msg.send(fail_silently=True)
-                # Save PDF to patient receipt for download/print (optional: save to model or media if needed)
+                # Save PDF to Billing model for future download
+                bill.receipt_pdf = pdf_data
+                bill.save(update_fields=["receipt_pdf"])
+                # Also keep in session for immediate download
                 request.session['last_receipt_pdf'] = pdf_data.hex()
+                request.session.modified = True
+                request.session.save()
             except Exception as notify_exc:
                 # Log or print error, but don't block payment
                 print(f"Admin notification failed: {notify_exc}")
 
             messages.success(request, "Payment status updated successfully.")
-            return redirect("billing", id=patient.id)
+            pdf_url = reverse('download_receipt', args=[bill.id])
+            profile_url = reverse('pat_view', args=[patient.id])
+            return render(request, "patients/payment_success_download.html", {
+                "pdf_url": pdf_url,
+                "pdf_filename": f"receipt_bill_{bill.id}.pdf",
+                "profile_url": profile_url,
+            })
         except Exception as e:
             messages.error(request, f"Error updating payment: {str(e)}")
             print(e)
@@ -172,7 +183,32 @@ def update_payment(request, bill_id):
     payment_history = bill.payment_history.order_by('-timestamp')
     return render(request, "patients/update_payment.html", {"bill": bill, "patient": patient, "payment_history": payment_history})
 
-# Create your views here.
+from django.http import HttpResponse
+import binascii
+from django.views.decorators.http import require_GET
+
+# Serve PDF receipt for download after payment
+@require_GET
+def download_receipt(request, bill_id):
+    # Try session first for immediate download after payment
+    pdf_hex = request.session.get('last_receipt_pdf')
+    pdf_data = None
+    if pdf_hex:
+        try:
+            pdf_data = binascii.unhexlify(pdf_hex)
+        except Exception:
+            pdf_data = None
+    # If not in session, try from Billing model
+    if not pdf_data:
+        from .models import Billing
+        bill = Billing.objects.filter(id=bill_id).first()
+        if bill and bill.receipt_pdf:
+            pdf_data = bill.receipt_pdf
+        else:
+            return HttpResponse('No receipt available.', status=404)
+    response = HttpResponse(pdf_data, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="receipt_bill_{bill_id}.pdf"'
+    return response
 def all_patients(request):
     patients = Patient_register.objects.all()
     return render(request, 'patients/home.html', {'patients': patients})
@@ -405,15 +441,59 @@ def re_admit(request, id):
             messages.error(request, "Patient is already admitted.")
             return redirect('all_patients')
         
-        # Update the patient's re-admission status
-        patient.is_discharged = False
-        patient.discharge_date = None
-        patient.adm_date = datetime.now().date()
-        
-        # Do NOT clear previous records. All previous drug issues, lab results, and ultrasounds are kept.
-        patient.save()
-
-        messages.success(request, "Patient successfully re-admitted. Previous records have been kept.")
+        # --- BILLING LOGIC ON RE-ADMISSION ---
+        from .models import Billing
+        from decimal import Decimal
+        # Find any unpaid/partially paid bill
+        pending_bills = Billing.objects.filter(patient=patient, is_paid=False)
+        if pending_bills.exists():
+            # There is a pending bill, so add its due to the new bill and mark as combined
+            pending_total_due = sum(b.due_amount for b in pending_bills)
+            # Optionally, mark old bills as combined/archived (customize as needed)
+            for b in pending_bills:
+                b.status = 'overdue'
+                b.save(update_fields=["status"])
+            # Set new admission date (use full datetime for accuracy)
+            from datetime import datetime
+            patient.is_discharged = False
+            patient.discharge_date = None
+            patient.adm_date = datetime.now()
+            patient.save()
+            # Create a new bill with the pending due clearly indicated in details
+            details = {
+                'previous_pending_due': float(pending_total_due),
+                'note': 'Includes previous unpaid bill(s) due on re-admission.'
+            }
+            new_bill = Billing.objects.create(
+                patient=patient,
+                total_amount=Decimal('0.00'),  # Will be updated on next billing calculation
+                paid_amount=Decimal('0.00'),
+                due_amount=pending_total_due,
+                is_paid=False,
+                details=details,
+                generated_by=request.user if request.user.is_authenticated else None,
+                status='unpaid',
+            )
+            messages.warning(request, f"Patient re-admitted. Previous unpaid bill(s) of KSH {pending_total_due:.2f} carried forward and added to new bill.")
+        else:
+            # All bills cleared, so start fresh
+            from datetime import datetime
+            patient.is_discharged = False
+            patient.discharge_date = None
+            patient.adm_date = datetime.now()
+            patient.save()
+            # Create a new bill (empty, will be updated on next billing)
+            Billing.objects.create(
+                patient=patient,
+                total_amount=Decimal('0.00'),
+                paid_amount=Decimal('0.00'),
+                due_amount=Decimal('0.00'),
+                is_paid=False,
+                details={'note': 'New bill on re-admission. All previous bills cleared.'},
+                generated_by=request.user if request.user.is_authenticated else None,
+                status='unpaid',
+            )
+            messages.success(request, "Patient successfully re-admitted. All previous bills were cleared. New bill started.")
         return redirect('pat_view', id=id)  # Redirect to the patient's view page
     
     except Patient_register.DoesNotExist:
@@ -427,14 +507,21 @@ def billing(request, id):
     from .models import Billing
     try:
         patient = get_object_or_404(Patient_register, id=id)
-        drug_issues = DrugIssue.objects.filter(patient=patient)
-        lab_results = LabaratoryTestResult.objects.filter(patient=patient)
-        ultrasounds = Ultrasound.objects.filter(patient=patient.name, date__gte=patient.adm_date)
+        # Only include charges after the latest admission date (use full datetime for accuracy)
+        adm_datetime = patient.adm_date if hasattr(patient, 'adm_date') else None
+        drug_issues = DrugIssue.objects.filter(patient=patient, issue_date__gte=adm_datetime)
+        lab_results = LabaratoryTestResult.objects.filter(patient=patient, test_date__gte=adm_datetime)
+        ultrasounds = Ultrasound.objects.filter(patient=patient.name, created_at__gte=adm_datetime)
 
         # Calculate billing period
         admission_date = patient.adm_date
+        from datetime import datetime
         current_date = datetime.now().date()
-        days_admitted = (current_date - admission_date).days or 1
+        # If adm_date is datetime, use date part for days_admitted
+        if isinstance(admission_date, datetime):
+            days_admitted = (current_date - admission_date.date()).days or 1
+        else:
+            days_admitted = (current_date - admission_date).days or 1
 
         # Charges (use Decimal for all monetary values)
         from decimal import Decimal
@@ -446,6 +533,14 @@ def billing(request, id):
         ultrasound_total = sum(Decimal(str(us.price)) for us in ultrasounds)
         total = consultation_charge + total_room_charge + medication_total + laboratory_total + ultrasound_total
 
+        # Use the latest bill for this patient
+        bill_obj = Billing.objects.filter(patient=patient).order_by('-created_at').first()
+        # If this bill has a previous_pending_due, add it to the total
+        from decimal import Decimal
+        previous_pending_due = Decimal('0.00')
+        if bill_obj and bill_obj.details and bill_obj.details.get('previous_pending_due'):
+            previous_pending_due = Decimal(str(bill_obj.details['previous_pending_due']))
+
         # Prepare details for Billing model
         details = {
             'consultation_charge': float(consultation_charge),
@@ -456,34 +551,41 @@ def billing(request, id):
             'days_admitted': days_admitted,
             'daily_room_rate': float(daily_room_charge),
         }
+        if previous_pending_due and previous_pending_due != Decimal('0.00'):
+            # Only show previous_pending_due if it is still actually due (not already paid off)
+            if previous_pending_due > 0:
+                details['previous_pending_due'] = float(previous_pending_due)
+                details['note'] = bill_obj.details.get('note', 'Includes previous unpaid bill(s) due on re-admission.')
 
-        # Get or create a billing record for this admission
-        bill_obj, created = Billing.objects.get_or_create(
-            patient=patient,
-            defaults={
-                'total_amount': total,
-                'paid_amount': Decimal('0.00'),
-                'due_amount': total,
-                'is_paid': False,
-                'details': details,
-                'generated_by': request.user if request.user.is_authenticated else None,
-            }
-        )
-        # Always update bill with latest totals/details
-        # If the new total is greater than what was previously billed, update the bill and mark as unpaid
+        # Add previous pending due to the total
+        total_with_pending = total + previous_pending_due
+
         bill_changed = False
-        if bill_obj.total_amount != total or bill_obj.details != details:
-            bill_obj.total_amount = total
-            bill_obj.details = details
-            # If the new total is greater than paid, mark as unpaid and update due
-            if bill_obj.paid_amount < total:
-                bill_obj.is_paid = False
-                bill_obj.due_amount = total - bill_obj.paid_amount
-            else:
-                bill_obj.due_amount = 0
-                bill_obj.is_paid = True
-            bill_obj.save(update_fields=["total_amount", "due_amount", "details", "is_paid"])
-            bill_changed = True
+        if bill_obj:
+            # Always update bill with latest totals/details
+            if bill_obj.total_amount != total_with_pending or bill_obj.details != details:
+                bill_obj.total_amount = total_with_pending
+                bill_obj.details = details
+                # If the new total is greater than paid, mark as unpaid and update due
+                if bill_obj.paid_amount < total_with_pending:
+                    bill_obj.is_paid = False
+                    bill_obj.due_amount = total_with_pending - bill_obj.paid_amount
+                else:
+                    bill_obj.due_amount = 0
+                    bill_obj.is_paid = True
+                bill_obj.save(update_fields=["total_amount", "due_amount", "details", "is_paid"])
+                bill_changed = True
+        else:
+            # No bill exists, create a new one
+            bill_obj = Billing.objects.create(
+                patient=patient,
+                total_amount=total_with_pending,
+                paid_amount=Decimal('0.00'),
+                due_amount=total_with_pending,
+                is_paid=False,
+                details=details,
+                generated_by=request.user if request.user.is_authenticated else None,
+            )
 
         # Prepare context for template
         payment_history = bill_obj.payment_history.order_by('-timestamp')
@@ -503,7 +605,7 @@ def billing(request, id):
         }
         # Provide PDF receipt for patient if available
         import base64
-        receipt_pdf = request.session.pop('last_receipt_pdf', None)
+        receipt_pdf = request.session.get('last_receipt_pdf', None)
         if receipt_pdf:
             context['receipt_pdf'] = base64.b64encode(bytes.fromhex(receipt_pdf)).decode('utf-8')
         return render(request, 'patients/billing.html', context)

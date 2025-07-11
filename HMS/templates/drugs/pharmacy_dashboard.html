@@ -5,14 +5,18 @@
 
 {% block content %}
 <div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold text-primary"><i class="fas fa-prescription-bottle-alt me-2"></i>Pharmacy Dashboard</h2>
-        <a href="{% url 'add_drug' %}" class="btn btn-gradient-primary shadow"><i class="fas fa-plus"></i> Add New Drug</a>
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+        <h2 class="fw-bold text-primary mb-0"><i class="fas fa-prescription-bottle-alt me-2"></i>Pharmacy Dashboard</h2>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'add_drug' %}" class="btn btn-gradient-primary shadow"><i class="fas fa-plus"></i> Add New Drug</a>
+            <a href="{% url 'otc_sale' %}" class="btn btn-gradient-primary shadow"><i class="fas fa-cash-register"></i> OTC Sale</a>
+            <a href="{% url 'otc_sales_list' %}" class="btn btn-gradient-primary shadow"><i class="fas fa-list"></i> OTC Sales History</a>
+        </div>
     </div>
 
-    <!-- Stock Overview Cards -->
+    <!-- Stock & OTC Overview Cards -->
     <div class="row g-4 mb-4">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card border-0 shadow h-100 gradient-card-green">
                 <div class="card-body text-center">
                     <i class="fas fa-capsules fa-2x text-success mb-2"></i>
@@ -21,7 +25,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card border-0 shadow h-100 gradient-card-yellow">
                 <div class="card-body text-center">
                     <i class="fas fa-pills fa-2x text-warning mb-2"></i>
@@ -30,12 +34,24 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card border-0 shadow h-100 gradient-card-blue">
                 <div class="card-body text-center">
                     <i class="fas fa-history fa-2x text-info mb-2"></i>
                     <h6 class="card-title">Issued Drugs (History)</h6>
                     <h2 class="fw-bold text-info mb-0">{{ issued_drugs.count }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow h-100 gradient-card-otc">
+                <div class="card-body text-center">
+                    <i class="fas fa-cash-register fa-2x text-primary mb-2"></i>
+                    <h6 class="card-title">Today's OTC Sales</h6>
+                    <h2 class="fw-bold text-primary mb-3">{{ otc_sales_today_count|default:'0' }}</h2>
+                    <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#otcSalesAmountModal">
+                        <i class="fas fa-eye"></i> Show Amount
+                    </button>
                 </div>
             </div>
         </div>
@@ -202,6 +218,24 @@
         </div>
     </div>
 </div>
+
+<!-- OTC Sales Amount Modal -->
+<div class="modal fade" id="otcSalesAmountModal" tabindex="-1" aria-labelledby="otcSalesAmountModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="otcSalesAmountModalLabel">Today's OTC Sales Amount</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center">
+        <span class="fw-bold fs-3">KSH {{ otc_sales_today_total|floatformat:2|default:'0.00' }}</span>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block extra_css %}
@@ -214,6 +248,9 @@
     }
     .gradient-card-blue {
         background: linear-gradient(135deg, #e3f2fd 0%, #90caf9 100%);
+    }
+    .gradient-card-otc {
+        background: linear-gradient(135deg, #f3e5f5 0%, #ce93d8 100%);
     }
     .bg-gradient-warning {
         background: linear-gradient(90deg, #fffde7 0%, #ffe082 100%) !important;
@@ -240,4 +277,14 @@
     .badge { font-size: 1rem; }
 </style>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<style>
+    .btn-gradient-primary {
+        transition: box-shadow 0.2s;
+    }
+    .btn-gradient-primary:active {
+        box-shadow: 0 0 0 0.2rem #1976d2;
+    }
+</style>
 {% endblock %}

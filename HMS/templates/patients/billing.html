@@ -173,6 +173,20 @@
             <h3 class="mb-0">Bill Summary</h3>
         </div>
         <div class="card-body">
+            {% if bill.details.previous_pending_due %}
+            <div class="alert alert-warning d-flex align-items-center gap-2" style="font-size:1.1em;">
+                <i class="fas fa-exclamation-triangle fa-lg me-2"></i>
+                <div>
+                    <strong>Previous Due Carried Forward:</strong> <span class="text-danger">KSH {{ bill.details.previous_pending_due|floatformat:2 }}</span><br>
+                    <span class="fst-italic">{{ bill.details.note }}</span>
+                </div>
+            </div>
+            {% elif bill.details.note %}
+            <div class="alert alert-info d-flex align-items-center gap-2" style="font-size:1.05em;">
+                <i class="fas fa-info-circle fa-lg me-2"></i>
+                <span class="fst-italic">{{ bill.details.note }}</span>
+            </div>
+            {% endif %}
             <table class="table table-bordered">
                 <tbody>
                     <tr>

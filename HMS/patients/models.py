@@ -106,6 +106,9 @@ class Billing(models.Model):
     due_date = models.DateField(null=True, blank=True)
     is_overdue = models.BooleanField(default=False)
 
+    # Store PDF receipt as binary (nullable, optional)
+    receipt_pdf = models.BinaryField(null=True, blank=True)
+
     def update_status(self):
         if self.due_amount <= 0:
             self.status = "paid"

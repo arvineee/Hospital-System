@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Payment Successful</title>
+    <script>
+        window.onload = function() {
+            // Trigger download
+            var link = document.createElement('a');
+            link.href = "{{ pdf_url }}";
+            link.download = "{{ pdf_filename }}";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // Redirect after short delay
+            setTimeout(function() {
+                window.location.href = "{{ profile_url }}";
+            }, 2000); // 2 seconds
+        };
+    </script>
+</head>
+<body>
+    <div style="text-align:center; margin-top:50px;">
+        <h2>Payment Successful!</h2>
+        <p>Your receipt is being downloaded...</p>
+        <p>You will be redirected to your profile shortly.</p>
+    </div>
+</body>
+</html>

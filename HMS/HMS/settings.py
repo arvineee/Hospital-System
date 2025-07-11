@@ -136,6 +136,8 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 
 MEDIA_ROOT = BASE_DIR / "media"
+# Hospital name
+Hospital_name = os.getenv('HOSPITAL_NAME', 'HMS Hospital System')
 
 # Email configuration (from .env)
 ADMINS = [(os.getenv('ADMINS', 'Admin,admin@example.com').split(',')[0], os.getenv('ADMINS', 'Admin,admin@example.com').split(',')[1])]

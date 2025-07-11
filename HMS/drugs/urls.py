@@ -10,4 +10,8 @@ urlpatterns = [
     path('drugs/issue/', views.drug_issue, name='drug_issue'),
     path('drugs/issue/<int:id>/', views.drug_issue, name='drug_issue'),
     path('pharmacy_dashboard/', views.pharmacy_dashboard, name='pharmacy_dashboard'),
+
+    # OTC sales
+    path('pharmacy/otc_sale/', views.otc_sale, name='otc_sale'),
+    path('pharmacy/otc_sales_list/', views.otc_sales_list, name='otc_sales_list'),
 ]

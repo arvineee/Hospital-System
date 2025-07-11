@@ -1,5 +1,52 @@
 from django.shortcuts import render,redirect
-from .models import Drug, DrugIssue
+from .models import Drug, DrugIssue, OTCSale
+from django.contrib.auth.decorators import login_required
+
+# OTC Sale View (with search)
+@login_required
+def otc_sale(request):
+    search_query = request.GET.get('search', '').strip()
+    drugs = Drug.objects.filter(quantity__gt=0)
+    if search_query:
+        drugs = drugs.filter(name__icontains=search_query)
+
+    if request.method == 'POST':
+        drug_id = request.POST.get('drug')
+        quantity = int(request.POST.get('quantity', 0))
+        customer_name = request.POST.get('customer_name', '').strip()
+        customer_contact = request.POST.get('customer_contact', '').strip()
+        if not drug_id or quantity <= 0:
+            messages.error(request, "Please select a drug and enter a valid quantity.")
+            return render(request, 'drugs/otc_sale.html', {'drugs': drugs})
+        try:
+            drug = Drug.objects.get(id=drug_id)
+        except Drug.DoesNotExist:
+            messages.error(request, "Selected drug does not exist.")
+            return render(request, 'drugs/otc_sale.html', {'drugs': drugs})
+        if drug.quantity < quantity:
+            messages.error(request, f"Insufficient stock for {drug.name}. Available: {drug.quantity}")
+            return render(request, 'drugs/otc_sale.html', {'drugs': drugs})
+        total_price = drug.price * quantity
+        sale = OTCSale.objects.create(
+            drug=drug,
+            quantity=quantity,
+            price_per_unit=drug.price,
+            total_price=total_price,
+            customer_name=customer_name,
+            customer_contact=customer_contact,
+            cashier=request.user
+        )
+        drug.quantity -= quantity
+        drug.save()
+        messages.success(request, f"Sold {quantity} x {drug.name} for KSH {total_price}.")
+        return redirect('otc_sales_list')
+    return render(request, 'drugs/otc_sale.html', {'drugs': drugs})
+
+# OTC Sales List View
+@login_required
+def otc_sales_list(request):
+    sales = OTCSale.objects.all().order_by('-sale_datetime')
+    return render(request, 'drugs/otc_sales_list.html', {'sales': sales})
 from django.contrib import messages
 from patients.models import Billing, Patient_register
 from django.db.models import Q
@@ -149,6 +196,15 @@ def pharmacy_dashboard(request):
     # All issued drugs (history)
     issued_drugs = DrugIssue.objects.filter(given=True)
 
+    # OTC sales summary for today
+    from datetime import datetime, timedelta
+    from django.utils import timezone
+    today = timezone.localdate()
+    otc_sales_today = OTCSale.objects.filter(sale_datetime__date=today)
+    otc_sales_today_count = otc_sales_today.count()
+    from django.db.models import Sum
+    otc_sales_today_total = otc_sales_today.aggregate(Sum('total_price'))['total_price__sum'] or 0
+
     # Handle marking as given or not given
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -225,5 +281,7 @@ def pharmacy_dashboard(request):
         'pending_issues': pending_issues,
         'issued_drugs': issued_drugs,
         'bills': bills,
+        'otc_sales_today_count': otc_sales_today_count,
+        'otc_sales_today_total': otc_sales_today_total,
     }
     return render(request, 'drugs/pharmacy_dashboard.html', context)

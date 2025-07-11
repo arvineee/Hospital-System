@@ -29,6 +29,7 @@ urlpatterns = [
     path('request_lab_test/<int:patient_id>/', views.request_lab_test, name='request_lab_test'),
     path('view_patient_lab_results/<int:patient_id>/', views.view_patient_lab_results, name='view_patient_lab_results'),
     path('request_labaratory_test/<int:patient_id>/', request_labaratory_test, name='request_labaratory_test'),
+    path('download_receipt/<int:bill_id>/', views.download_receipt, name='download_receipt'),
     
 
 ]
