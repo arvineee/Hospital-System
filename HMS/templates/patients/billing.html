@@ -22,7 +22,7 @@
                 <div class="col-md-6">
                     <p><strong>Admission Date:</strong> {{ admission_date|date:"F d, Y" }}</p>
                     <p><strong>Current Date:</strong> {{ current_date|date:"F d, Y" }}</p>
-                    <p><strong>Days Admitted:</strong> {{ bill.days_admitted }}</p>
+                    <p><strong>Days Admitted:</strong> {{ bill.details.days_admitted }}</p>
                     <p><strong>Bill Created:</strong> {{ bill.created_at|date:"F d, Y H:i" }}</p>
                     <p><strong>Last Updated:</strong> {{ bill.updated_at|date:"F d, Y H:i" }}</p>
                     <p><strong>Status:</strong> 
@@ -37,7 +37,18 @@
         </div>
     </div>
 
+    {% if bill.details.previous_pending_due %}
+    <div class="alert alert-warning d-flex align-items-center gap-2" style="font-size:1.1em;">
+        <i class="fas fa-exclamation-triangle fa-lg me-2"></i>
+        <div>
+            <strong>Previous Due Carried Forward:</strong> <span class="text-danger">KSH {{ bill.details.previous_pending_due|floatformat:2 }}</span><br>
+            <span class="fst-italic">Charges shown below are only from the current visit. Previous settled amounts are not recharged.</span>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Room Charges -->
+    {% if bill.details.room_charge > 0 %}
     <div class="card mb-4">
         <div class="card-header bg-info text-white">
             <h3 class="mb-0">Room Charges</h3>
@@ -61,8 +72,10 @@
             </table>
         </div>
     </div>
+    {% endif %}
 
     <!-- Medication Charges -->
+    {% if bill.details.medication_charge > 0 %}
     <div class="card mb-4">
         <div class="card-header bg-info text-white">
             <h3 class="mb-0">Medication Charges</h3>
@@ -96,8 +109,10 @@
             </div>
         </div>
     </div>
+    {% endif %}
 
     <!-- Laboratory Charges -->
+    {% if bill.details.laboratory_charge > 0 %}
     <div class="card mb-4">
         <div class="card-header bg-info text-white">
             <h3 class="mb-0">Laboratory Charges</h3>
@@ -131,8 +146,10 @@
             </div>
         </div>
     </div>
+    {% endif %}
 
     <!-- Ultrasound Charges -->
+    {% if bill.details.ultrasound_charge > 0 %}
     <div class="card mb-4">
         <div class="card-header bg-info text-white">
             <h3 class="mb-0">Ultrasound Charges</h3>
@@ -166,6 +183,7 @@
             </div>
         </div>
     </div>
+    {% endif %}
 
     <!-- Bill Summary -->
     <div class="card mb-4">
@@ -173,20 +191,6 @@
             <h3 class="mb-0">Bill Summary</h3>
         </div>
         <div class="card-body">
-            {% if bill.details.previous_pending_due %}
-            <div class="alert alert-warning d-flex align-items-center gap-2" style="font-size:1.1em;">
-                <i class="fas fa-exclamation-triangle fa-lg me-2"></i>
-                <div>
-                    <strong>Previous Due Carried Forward:</strong> <span class="text-danger">KSH {{ bill.details.previous_pending_due|floatformat:2 }}</span><br>
-                    <span class="fst-italic">{{ bill.details.note }}</span>
-                </div>
-            </div>
-            {% elif bill.details.note %}
-            <div class="alert alert-info d-flex align-items-center gap-2" style="font-size:1.05em;">
-                <i class="fas fa-info-circle fa-lg me-2"></i>
-                <span class="fst-italic">{{ bill.details.note }}</span>
-            </div>
-            {% endif %}
             <table class="table table-bordered">
                 <tbody>
                     <tr>
@@ -229,11 +233,9 @@
         <button onclick="window.print()" class="btn btn-primary">
             <i class="fas fa-print"></i> Print Bill
         </button>
-        {% if receipt_pdf %}
-        <a href="data:application/pdf;base64,{{ receipt_pdf }}" download="receipt_bill_{{ bill.id }}.pdf" class="btn btn-outline-info">
+        <a href="{% url 'download_receipt' bill.id %}" class="btn btn-outline-info">
             <i class="fas fa-file-pdf"></i> Download Receipt (PDF)
         </a>
-        {% endif %}
     </div>
 </div>
 {% endblock %}
@@ -248,13 +250,9 @@
             color: #000 !important;
             -webkit-print-color-adjust: exact;
         }
-        .table-dark {
+        .table-dark, .table-secondary {
             background-color: #f8f9fa !important;
             color: #000 !important;
-            -webkit-print-color-adjust: exact;
-        }
-        .table-secondary {
-            background-color: #f8f9fa !important;
             -webkit-print-color-adjust: exact;
         }
     }

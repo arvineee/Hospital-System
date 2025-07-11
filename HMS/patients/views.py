@@ -219,23 +219,40 @@ def update_payment(request, bill_id):
                 doc.build(elements)
                 pdf_data = buffer.getvalue()
                 buffer.close()
+
+                # Save PDF to Billing model (FileField)
+                from django.core.files.base import ContentFile
+                pdf_filename = f"receipt_bill_{bill.id}.pdf"
+                bill.receipt_pdf.save(pdf_filename, ContentFile(pdf_data), save=True)
+                bill.refresh_from_db()
+
+                # Store PDF in session for immediate download (base64)
+                import base64
+                request.session['last_receipt_pdf'] = base64.b64encode(pdf_data).decode('utf-8')
+
+                # Prepare admin email
                 from django.conf import settings
                 admin_emails = [email for _, email in getattr(settings, 'ADMINS', [('Admin', 'admin@example.com')])]
                 msg = EmailMultiAlternatives(subject, text_message, settings.DEFAULT_FROM_EMAIL, admin_emails)
                 msg.attach_alternative(html_message, "text/html")
-                msg.attach(f"receipt_bill_{bill.id}.pdf", pdf_data, "application/pdf")
-                msg.send(fail_silently=False)
-                # Save PDF to Billing model for future download (ensure it's saved as a Django FileField)
-                from django.core.files.base import ContentFile
-                bill.receipt_pdf.save(f"receipt_bill_{bill.id}.pdf", ContentFile(pdf_data), save=True)
-                # Also keep in session for immediate download (use base64 for binary safety)
-                import base64
-                request.session['last_receipt_pdf'] = base64.b64encode(pdf_data).decode('utf-8')
-                request.session.modified = True
-                request.session.save()
-            except Exception as notify_exc:
-                # Log or print error, but don't block payment
-                print(f"Admin notification failed: {notify_exc}")
+                # Attach from the saved file (always read as bytes)
+                try:
+                    if bill.receipt_pdf and hasattr(bill.receipt_pdf, 'open'):
+                        bill.receipt_pdf.open('rb')
+                        msg.attach(pdf_filename, bill.receipt_pdf.read(), "application/pdf")
+                        bill.receipt_pdf.close()
+                    else:
+                        msg.attach(pdf_filename, pdf_data, "application/pdf")
+                except Exception as attach_exc:
+                    print(f"PDF attach failed: {attach_exc}")
+                    msg.attach(pdf_filename, pdf_data, "application/pdf")
+                try:
+                    msg.send(fail_silently=False)
+                except Exception as email_exc:
+                    print(f"Email send failed: {email_exc}")
+
+            except Exception as exc:
+                print(f"Payment notification error: {exc}")
 
             messages.success(request, "Payment status updated successfully.")
             pdf_url = reverse('download_receipt', args=[bill.id])
@@ -266,16 +283,25 @@ def download_receipt(request, bill_id):
     if pdf_b64:
         try:
             pdf_data = base64.b64decode(pdf_b64)
-        except Exception:
+        except Exception as e:
+            print(f"Base64 decode error: {e}")
             pdf_data = None
-    # If not in session, try from Billing model
+    # If not in session, try from Billing model (read as bytes)
     if not pdf_data:
         from .models import Billing
         bill = Billing.objects.filter(id=bill_id).first()
-        if bill and bill.receipt_pdf:
-            pdf_data = bill.receipt_pdf
+        if bill and bill.receipt_pdf and hasattr(bill.receipt_pdf, 'open'):
+            try:
+                bill.receipt_pdf.open('rb')
+                pdf_data = bill.receipt_pdf.read()
+                bill.receipt_pdf.close()
+            except Exception as file_exc:
+                print(f"Receipt file read error: {file_exc}")
+                return HttpResponse('Error reading receipt file.', status=500)
         else:
             return HttpResponse('No receipt available.', status=404)
+    if not pdf_data:
+        return HttpResponse('No receipt data found.', status=404)
     response = HttpResponse(pdf_data, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="receipt_bill_{bill_id}.pdf"'
     return response
