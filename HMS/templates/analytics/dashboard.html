@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Analytics Dashboard{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Header -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-5 gap-3">
+        <h1 class="display-5 fw-bold text-primary mb-0">
+            <i class="fas fa-chart-line me-2"></i>Analytics & Reports
+        </h1>
+        <a href="{% url 'pharmacy_dashboard' %}" class="btn btn-outline-primary btn-lg">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <!-- KPIs -->
+    <div class="row text-center g-4 mb-5">
+        <div class="col-md-3">
+            <div class="card shadow-sm p-4">
+                <h5>Total Patients</h5>
+                <h2 class="text-success">{{ total_patients }}</h2>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm p-4">
+                <h5>Total Staff</h5>
+                <h2 class="text-primary">{{ total_staff }}</h2>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm p-4">
+                <h5>OTC Sales Today</h5>
+                <h2 class="text-warning">{{ otc_sales_today }}</h2>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm p-4">
+                <h5>Lab Tests This Month</h5>
+                <h2 class="text-danger">{{ lab_tests_month }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="row g-5">
+        <!-- Admissions Chart -->
+        <div class="col-md-6">
+            <div class="card shadow-sm p-4">
+                <h5 class="mb-3 text-secondary">Admissions - Last 30 Days</h5>
+                <div style="height: 300px;">
+                    <canvas id="admissionsChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lab Tests Trend Chart -->
+        <div class="col-md-6">
+            <div class="card shadow-sm p-4">
+                <h5 class="mb-3 text-secondary">Lab Tests - Last 6 Months</h5>
+                <div style="height: 300px;">
+                    <canvas id="labTestsChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Revenue Chart -->
+        <div class="col-12">
+            <div class="card shadow-sm p-4">
+                <h5 class="mb-3 text-secondary">Revenue Breakdown - This Month</h5>
+                <div style="max-width: 500px; margin: auto; height: 300px;">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Admissions Chart
+    const admissionsCtx = document.getElementById('admissionsChart').getContext('2d');
+    new Chart(admissionsCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ admissions_labels|safe }},
+            datasets: [{
+                label: 'Admissions',
+                data: {{ admissions_data|safe }},
+                backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+
+    // Lab Tests Chart
+    const labCtx = document.getElementById('labTestsChart').getContext('2d');
+    new Chart(labCtx, {
+        type: 'line',
+        data: {
+            labels: {{ lab_tests_labels|safe }},
+            datasets: [{
+                label: 'Lab Tests',
+                data: {{ lab_tests_data|safe }},
+                borderColor: 'rgba(255, 99, 132, 1)',
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                fill: true,
+                tension: 0.4,
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+
+    // Revenue Chart
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    new Chart(revenueCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ revenue_labels|safe }},
+            datasets: [{
+                label: 'Revenue',
+                data: {{ revenue_data|safe }},
+                backgroundColor: [
+                    'rgba(0, 123, 255, 0.7)',
+                    'rgba(40, 167, 69, 0.7)',
+                    'rgba(255, 193, 7, 0.7)',
+                    'rgba(220, 53, 69, 0.7)',
+                    'rgba(108, 117, 125, 0.7)'
+                ],
+                borderColor: '#fff',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '65%'
+        }
+    });
+</script>
+{% endblock %}

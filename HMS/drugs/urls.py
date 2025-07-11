@@ -1,5 +1,7 @@
 from django.urls import path
+
 from . import views
+from patients.views import analytics_dashboard
 
 urlpatterns = [
     path('drugs/', views.all_drugs, name='all_drugs'),
@@ -14,4 +16,6 @@ urlpatterns = [
     # OTC sales
     path('pharmacy/otc_sale/', views.otc_sale, name='otc_sale'),
     path('pharmacy/otc_sales_list/', views.otc_sales_list, name='otc_sales_list'),
+    # Analytics Dashboard
+    path('analytics/dashboard/', analytics_dashboard, name='analytics_dashboard'),
 ]

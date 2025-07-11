@@ -1,3 +1,71 @@
+from django.contrib.admin.views.decorators import staff_member_required
+
+# --- Analytics Dashboard View ---
+@staff_member_required
+def analytics_dashboard(request):
+    from patients.models import Patient_register
+    from drugs.models import OTCSale
+    from labaratory.models import LabaratoryTestResult
+    from django.contrib.auth.models import User
+    from django.db.models import Count, Sum
+    from datetime import datetime, timedelta
+    from django.utils import timezone
+
+    # KPIs
+    total_patients = Patient_register.objects.count()
+    total_staff = User.objects.filter(is_staff=True).count()
+    today = timezone.localdate()
+    otc_sales_today = OTCSale.objects.filter(sale_datetime__date=today).count()
+    # Lab tests this month
+    first_of_month = today.replace(day=1)
+    # If test_date is a DateTimeField, use __gte directly
+    lab_tests_month = LabaratoryTestResult.objects.filter(test_date__gte=first_of_month).count()
+
+    # Admissions last 30 days
+    last_30 = today - timedelta(days=29)
+    # If adm_date is a DateField or DateTimeField, use __gte directly (no __date)
+    admissions = Patient_register.objects.filter(adm_date__gte=last_30)
+    from django.db.models.functions import TruncDate
+    admissions_by_day = admissions.annotate(day=TruncDate('adm_date')).values('day').annotate(count=Count('id')).order_by('day')
+    admissions_labels = [a['day'].strftime('%b %d') for a in admissions_by_day]
+    admissions_data = [a['count'] for a in admissions_by_day]
+
+    # Revenue breakdown (this month)
+    from patients.models import Billing
+    bills = Billing.objects.filter(created_at__date__gte=first_of_month)
+    revenue_labels = ['Consultation', 'Medication', 'Lab', 'Ultrasound', 'Other']
+    revenue_data = [
+        sum(float(b.details.get('consultation_charge', 0)) for b in bills),
+        sum(float(b.details.get('medication_charge', 0)) for b in bills),
+        sum(float(b.details.get('laboratory_charge', 0)) for b in bills),
+        sum(float(b.details.get('ultrasound_charge', 0)) for b in bills),
+        sum(float(b.details.get('room_charge', 0)) for b in bills),
+    ]
+
+    # Lab tests trend (last 6 months)
+    from dateutil.relativedelta import relativedelta
+    lab_trend_labels = []
+    lab_trend_data = []
+    for i in range(5, -1, -1):
+        month = today - relativedelta(months=i)
+        label = month.strftime('%b %Y')
+        count = LabaratoryTestResult.objects.filter(test_date__year=month.year, test_date__month=month.month).count()
+        lab_trend_labels.append(label)
+        lab_trend_data.append(count)
+
+    context = {
+        'total_patients': total_patients,
+        'total_staff': total_staff,
+        'lab_tests_month': lab_tests_month,
+        'otc_sales_today': otc_sales_today,
+        'admissions_labels': admissions_labels,
+        'admissions_data': admissions_data,
+        'revenue_labels': revenue_labels,
+        'revenue_data': revenue_data,
+        'lab_tests_labels': lab_trend_labels,  # renamed for template JS
+        'lab_tests_data': lab_trend_data,      # renamed for template JS
+    }
+    return render(request, 'analytics/dashboard.html', context)
 
 from .models import Billing, PaymentHistory
 from django.views.decorators.http import require_http_methods
