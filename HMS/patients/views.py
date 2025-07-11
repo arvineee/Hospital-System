@@ -131,7 +131,7 @@ def update_payment(request, bill_id):
                 bill.due_amount = 0
             bill.save(update_fields=["paid_amount", "due_amount", "payment_method", "payment_reference", "updated_at", "is_paid", "status"])
 
-            # --- Notify Admins on Payment ---
+            # --- Notify Admins on Payment and Save PDF for Download ---
             try:
                 Hospital_name = getattr(settings, 'HOSPITAL_NAME', 'HMS Hospital System')
                 from django.core.mail import EmailMultiAlternatives
@@ -224,12 +224,13 @@ def update_payment(request, bill_id):
                 msg = EmailMultiAlternatives(subject, text_message, settings.DEFAULT_FROM_EMAIL, admin_emails)
                 msg.attach_alternative(html_message, "text/html")
                 msg.attach(f"receipt_bill_{bill.id}.pdf", pdf_data, "application/pdf")
-                msg.send(fail_silently=True)
-                # Save PDF to Billing model for future download
-                bill.receipt_pdf = pdf_data
-                bill.save(update_fields=["receipt_pdf"])
-                # Also keep in session for immediate download
-                request.session['last_receipt_pdf'] = pdf_data.hex()
+                msg.send(fail_silently=False)
+                # Save PDF to Billing model for future download (ensure it's saved as a Django FileField)
+                from django.core.files.base import ContentFile
+                bill.receipt_pdf.save(f"receipt_bill_{bill.id}.pdf", ContentFile(pdf_data), save=True)
+                # Also keep in session for immediate download (use base64 for binary safety)
+                import base64
+                request.session['last_receipt_pdf'] = base64.b64encode(pdf_data).decode('utf-8')
                 request.session.modified = True
                 request.session.save()
             except Exception as notify_exc:
@@ -259,11 +260,12 @@ from django.views.decorators.http import require_GET
 @require_GET
 def download_receipt(request, bill_id):
     # Try session first for immediate download after payment
-    pdf_hex = request.session.get('last_receipt_pdf')
+    import base64
+    pdf_b64 = request.session.get('last_receipt_pdf')
     pdf_data = None
-    if pdf_hex:
+    if pdf_b64:
         try:
-            pdf_data = binascii.unhexlify(pdf_hex)
+            pdf_data = base64.b64decode(pdf_b64)
         except Exception:
             pdf_data = None
     # If not in session, try from Billing model
