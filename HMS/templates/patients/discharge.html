@@ -4,21 +4,51 @@
 {% block title %}Discharge Patient{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <h2 class="text-center">Discharge Patient</h2>
-    <hr>
-    <form method="POST">
-        {% csrf_token %}
-        <div class="mb-3">
-            <label for="patientName" class="form-label">Patient Name</label>
-            <input type="text" class="form-control" id="patientName" value="{{ patient.name }}" readonly>
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <div class="card shadow-lg border-0">
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-user-check fa-3x text-success mb-2"></i>
+                        <h2 class="fw-bold mb-1">Discharge Patient</h2>
+                        <p class="text-muted mb-0">Complete the form to discharge the patient.</p>
+                    </div>
+                    <form method="POST" autocomplete="off">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="patientName" class="form-label">Patient Name</label>
+                            <input type="text" class="form-control" id="patientName" value="{{ patient.name }}" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label for="dischargeDate" class="form-label">Discharge Date</label>
+                            <input type="date" class="form-control" id="dischargeDate" name="discharge_date" required>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-4">
+                            <button type="submit" class="btn btn-success px-4">
+                                <i class="fas fa-check-circle me-2"></i>Discharge
+                            </button>
+                            <a href="{% url 'all_patients' %}" class="btn btn-outline-secondary px-4">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
-        <div class="mb-3">
-            <label for="dischargeDate" class="form-label">Discharge Date</label>
-            <input type="date" class="form-control" id="dischargeDate" name="discharge_date" required>
-        </div>
-        <button type="submit" class="btn btn-primary">Discharge</button>
-        <a href="{% url 'all_patients' %}" class="btn btn-secondary">Cancel</a>
-    </form>
+    </div>
 </div>
+<script>
+    // Auto-fill today's date in the discharge date field
+    document.addEventListener('DOMContentLoaded', function() {
+        var dateInput = document.getElementById('dischargeDate');
+        if (dateInput && !dateInput.value) {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            dateInput.value = `${yyyy}-${mm}-${dd}`;
+        }
+    });
+</script>
 {% endblock %}
