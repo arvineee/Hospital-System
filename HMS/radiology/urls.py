@@ -7,6 +7,7 @@ from .views import (
     ultrasound_requests_list,
     add_ultrasound_for_request,
     reject_ultrasound_request,
+    radiology_dashboard,
 )
 from django.urls import path
 
@@ -19,4 +20,5 @@ urlpatterns = [
     path("request_list",ultrasound_requests_list, name='ultrasound_requests_list'),
     path('add_ultrasound_for_request/<int:request_id>/', add_ultrasound_for_request, name='add_ultrasound_for_request'),
     path('reject_ultrasound_request/<int:request_id>/', reject_ultrasound_request, name='reject_ultrasound_request'),
+    path('dashboard/', radiology_dashboard, name='radiology_dashboard'),
 ]

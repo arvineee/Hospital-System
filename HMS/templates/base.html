@@ -43,6 +43,12 @@
                 {% with role=user|get_user_role %}
                     {% if role == 'doctor' %}
                         <a class="navbar-brand" href="{% url 'dashboard' %}">HMS</a>
+                    {% elif role == 'pharmacist' %}
+                        <a class="navbar-brand" href="{% url 'pharmacy_dashboard' %}">HMS</a>
+                    {% elif role == 'radiologist' %}
+                        <a class="navbar-brand" href="{% url 'radiology_dashboard' %}">HMS</a>
+                    {% elif role == 'lab_tech' %}
+                        <a class="navbar-brand" href="{% url 'lab_dashboard' %}">HMS</a>
                     {% else %}
                         <span class="navbar-brand disabled" style="pointer-events: none; cursor: default;">HMS</span>
                     {% endif %}
@@ -72,20 +78,21 @@
                                 </li>
                             {% elif role == 'pharmacist' %}
                                 <li class="nav-item">
-                                    <a class="nav-link" href="{% url 'dashboard' %}">Home</a>
+                                    <a class="nav-link" href="{% url 'pharmacy_dashboard' %}">Home</a>
                                 </li>
                                 <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle" href="#" id="drugsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                        Drugs
+                                    <a class="nav-link dropdown-toggle" href="#" id="pharmacyDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Pharmacy
                                     </a>
-                                    <ul class="dropdown-menu" aria-labelledby="drugsDropdown">
+                                    <ul class="dropdown-menu" aria-labelledby="pharmacyDropdown">
+                                        <li><a class="dropdown-item" href="{% url 'pharmacy_dashboard' %}">Pharmacy Dashboard</a></li>
                                         <li><a class="dropdown-item" href="{% url 'add_drug' %}">Add New Drug</a></li>
                                         <li><a class="dropdown-item" href="{% url 'all_drugs' %}">View All Drugs</a></li>
                                     </ul>
                                 </li>
                             {% elif role == 'radiologist' %}
                                 <li class="nav-item">
-                                    <a class="nav-link" href="{% url 'dashboard' %}">Home</a>
+                                    <a class="nav-link" href="{% url 'radiology_dashboard' %}">Home</a>
                                 </li>
                                 <li class="nav-item dropdown">
                                     <a class="nav-link dropdown-toggle" href="#" id="radiologyDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -99,7 +106,7 @@
                                 </li>
                             {% elif role == 'lab_tech' %}
                                 <li class="nav-item">
-                                    <a class="nav-link" href="{% url 'lab_dashboard' %}">Laboratory Dashboard</a>
+                                    <a class="nav-link" href="{% url 'lab_dashboard' %}">Home</a>
                                 </li>
                             {% else %}
                                 <li class="nav-item">

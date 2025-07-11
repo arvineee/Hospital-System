@@ -1,0 +1,241 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Radiology Dashboard{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-info"><i class="fas fa-x-ray me-2"></i>Radiology Dashboard</h2>
+        <a href="{% url 'ultrasound_create' %}" class="btn btn-gradient-info shadow"><i class="fas fa-plus"></i> Add Ultrasound</a>
+    </div>
+
+    <!-- Overview Cards -->
+    <div class="row g-4 mb-4 futuristic-cards">
+        <div class="col-md-4">
+            <div class="card border-0 shadow h-100 futuristic-card-blue">
+                <div class="card-body text-center">
+                    <i class="fas fa-x-ray fa-2x text-info mb-2"></i>
+                    <h6 class="card-title">Total Ultrasounds</h6>
+                    <h2 class="fw-bold text-info mb-0">{{ ultrasounds.count }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow h-100 futuristic-card-green">
+                <div class="card-body text-center">
+                    <i class="fas fa-clipboard-list fa-2x text-success mb-2"></i>
+                    <h6 class="card-title">Pending Requests</h6>
+                    <h2 class="fw-bold text-success mb-0">{{ pending_requests.count }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow h-100 futuristic-card-yellow">
+                <div class="card-body text-center">
+                    <i class="fas fa-check-circle fa-2x text-warning mb-2"></i>
+                    <h6 class="card-title">Completed Requests</h6>
+                    <h2 class="fw-bold text-warning mb-0">{{ completed_requests.count }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Ultrasounds Table -->
+    <div class="card mb-4 shadow border-0 futuristic-table">
+        <div class="card-header bg-gradient-info text-white d-flex align-items-center">
+            <i class="fas fa-x-ray me-2"></i>
+            <h4 class="mb-0">Recent Ultrasounds</h4>
+        </div>
+        <div class="card-body table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Patient</th>
+                        <th>Type</th>
+                        <th>Date</th>
+                        <th>Findings</th>
+                        <th>Image</th>
+                        <th>Price (KSH)</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for us in ultrasounds|slice:':10' %}
+                    <tr>
+                        <td>{{ us.patient }}</td>
+                        <td>{{ us.ultrasound_type }}</td>
+                        <td>{{ us.date|date:'Y-m-d' }}</td>
+                        <td>{{ us.findings|truncatechars:30 }}</td>
+                        <td>
+                            {% if us.image %}
+                                <img src="{{ us.image.url }}" alt="Ultrasound Image" class="img-thumbnail futuristic-img" style="max-width: 60px;">
+                            {% else %}
+                                <span class="text-muted">No image</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ us.price|floatformat:2 }}</td>
+                        <td>
+                            <a href="{% url 'ultrasound_detail' us.id %}" class="btn btn-info btn-sm"><i class="fas fa-eye"></i> View</a>
+                            <a href="{% url 'ultrasound_update' us.id %}" class="btn btn-primary btn-sm"><i class="fas fa-edit"></i> Edit</a>
+                            <a href="{% url 'ultrasound_delete' us.id %}" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i> Delete</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="7" class="text-center">No ultrasounds found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pending Requests Table -->
+    <div class="card mb-4 shadow border-0 futuristic-table">
+        <div class="card-header bg-gradient-warning text-dark d-flex align-items-center">
+            <i class="fas fa-clipboard-list me-2"></i>
+            <h4 class="mb-0">Pending Ultrasound Requests</h4>
+        </div>
+        <div class="card-body table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Patient</th>
+                        <th>Type</th>
+                        <th>Priority</th>
+                        <th>Requested By</th>
+                        <th>Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in pending_requests|slice:':10' %}
+                    <tr>
+                        <td>{{ req.patient }}</td>
+                        <td>{{ req.ultrasound_type }}</td>
+                        <td><span class="badge bg-{% if req.priority == 'urgent' %}danger{% elif req.priority == 'emergency' %}warning{% else %}secondary{% endif %}">{{ req.priority|title }}</span></td>
+                        <td>{{ req.requester }}</td>
+                        <td>{{ req.request_date|date:'Y-m-d H:i' }}</td>
+                        <td>
+                            <a href="{% url 'add_ultrasound_for_request' req.id %}" class="btn btn-success btn-sm"><i class="fas fa-plus"></i> Add Result</a>
+                            <a href="{% url 'reject_ultrasound_request' req.id %}" class="btn btn-danger btn-sm"><i class="fas fa-times"></i> Reject</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="text-center">No pending requests.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Completed & Rejected Requests Table -->
+    <div class="card mb-4 shadow border-0 futuristic-table">
+        <div class="card-header bg-gradient-green text-white d-flex align-items-center">
+            <i class="fas fa-check-circle me-2"></i>
+            <h4 class="mb-0">Completed & Rejected Ultrasound Requests</h4>
+        </div>
+        <div class="card-body table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Patient</th>
+                        <th>Type</th>
+                        <th>Requested By</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in completed_requests|slice:':10' %}
+                    <tr>
+                        <td>{{ req.patient }}</td>
+                        <td>{{ req.ultrasound_type }}</td>
+                        <td>{{ req.requester }}</td>
+                        <td>{{ req.request_date|date:'Y-m-d H:i' }}</td>
+                        <td>
+                            {% if req.notes and 'Rejected' in req.notes %}
+                                <span class="badge bg-danger">Rejected</span>
+                            {% else %}
+                                <span class="badge bg-success">Completed</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if req.notes %}
+                                <span class="text-muted">{{ req.notes|linebreaksbr }}</span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="text-center">No completed or rejected requests.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .futuristic-cards .card {
+        border-radius: 1.5rem;
+        box-shadow: 0 4px 32px 0 rgba(0, 255, 255, 0.08), 0 1.5px 4px 0 rgba(0,0,0,0.08);
+        transition: transform 0.2s;
+    }
+    .futuristic-cards .card:hover {
+        transform: scale(1.03);
+        box-shadow: 0 8px 40px 0 rgba(0, 255, 255, 0.18), 0 2px 8px 0 rgba(0,0,0,0.12);
+    }
+    .futuristic-card-blue {
+        background: linear-gradient(135deg, #232526 0%, #90caf9 100%);
+        color: #fff;
+    }
+    .futuristic-card-green {
+        background: linear-gradient(135deg, #43cea2 0%, #185a9d 100%);
+        color: #fff;
+    }
+    .futuristic-card-yellow {
+        background: linear-gradient(135deg, #fffde7 0%, #ffe082 100%);
+        color: #232526;
+    }
+    .bg-gradient-info {
+        background: linear-gradient(90deg, #232526 0%, #90caf9 100%) !important;
+    }
+    .bg-gradient-warning {
+        background: linear-gradient(90deg, #fffde7 0%, #ffe082 100%) !important;
+    }
+    .bg-gradient-green {
+        background: linear-gradient(90deg, #43cea2 0%, #185a9d 100%) !important;
+    }
+    .bg-gradient-dark {
+        background: linear-gradient(90deg, #232526 0%, #414345 100%) !important;
+    }
+    .btn-gradient-info {
+        background: linear-gradient(90deg, #1976d2 0%, #64b5f6 100%);
+        color: #fff;
+        border: none;
+    }
+    .btn-gradient-info:hover {
+        background: linear-gradient(90deg, #1565c0 0%, #42a5f5 100%);
+        color: #fff;
+    }
+    .futuristic-table .table {
+        border-radius: 1rem;
+        overflow: hidden;
+        background: rgba(255,255,255,0.95);
+        box-shadow: 0 2px 16px 0 rgba(0,255,255,0.06);
+    }
+    .futuristic-img {
+        border-radius: 0.5rem;
+        border: 2px solid #90caf9;
+    }
+    .card-header { font-size: 1.2rem; font-weight: 600; }
+    .table th, .table td { vertical-align: middle; }
+    .btn-sm { padding: 0.25rem 0.75rem; font-size: 0.95rem; }
+    .badge { font-size: 1rem; }
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
+{% endblock %}

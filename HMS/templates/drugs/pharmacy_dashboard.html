@@ -1,0 +1,243 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Pharmacy Dashboard{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-primary"><i class="fas fa-prescription-bottle-alt me-2"></i>Pharmacy Dashboard</h2>
+        <a href="{% url 'add_drug' %}" class="btn btn-gradient-primary shadow"><i class="fas fa-plus"></i> Add New Drug</a>
+    </div>
+
+    <!-- Stock Overview Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow h-100 gradient-card-green">
+                <div class="card-body text-center">
+                    <i class="fas fa-capsules fa-2x text-success mb-2"></i>
+                    <h6 class="card-title">Total Drugs in Stock</h6>
+                    <h2 class="fw-bold text-success mb-0">{{ drugs.count }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow h-100 gradient-card-yellow">
+                <div class="card-body text-center">
+                    <i class="fas fa-pills fa-2x text-warning mb-2"></i>
+                    <h6 class="card-title">Pending Prescriptions</h6>
+                    <h2 class="fw-bold text-warning mb-0">{{ pending_issues.count }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow h-100 gradient-card-blue">
+                <div class="card-body text-center">
+                    <i class="fas fa-history fa-2x text-info mb-2"></i>
+                    <h6 class="card-title">Issued Drugs (History)</h6>
+                    <h2 class="fw-bold text-info mb-0">{{ issued_drugs.count }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Prescriptions Grouped by Patient -->
+    <div class="card mb-4 shadow border-0">
+        <div class="card-header bg-gradient-warning text-dark d-flex align-items-center">
+            <i class="fas fa-user-clock me-2"></i>
+            <h4 class="mb-0">Pending Prescriptions (Grouped by Patient)</h4>
+        </div>
+        <div class="card-body table-responsive">
+            {% regroup pending_issues by patient as patient_groups %}
+            {% if patient_groups %}
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Patient</th>
+                        <th>Drugs</th>
+                        <th>Date Prescribed</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for group in patient_groups %}
+                    <tr>
+                        <td class="fw-bold text-primary">{{ group.grouper }}</td>
+                        <td>
+                            <ul class="list-unstyled mb-0">
+                                {% for issue in group.list %}
+                                <li>
+                                    <span class="fw-semibold">{{ issue.drug.name }}</span> <span class="badge bg-secondary">x{{ issue.quantity_issued }}</span>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                        <td>
+                            <ul class="list-unstyled mb-0">
+                                {% for issue in group.list %}
+                                <li>{{ issue.created_at|date:'Y-m-d H:i' }}</li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                        <td>
+                            {% for issue in group.list %}
+                            <form method="post" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="mark_given">
+                                <input type="hidden" name="issue_id" value="{{ issue.id }}">
+                                <button type="submit" class="btn btn-success btn-sm mb-1"><i class="fas fa-check"></i> Mark as Given</button>
+                            </form>
+                            <form method="post" class="d-inline ms-1">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="mark_not_given">
+                                <input type="hidden" name="issue_id" value="{{ issue.id }}">
+                                <button type="submit" class="btn btn-danger btn-sm mb-1"><i class="fas fa-times"></i> Not Given</button>
+                            </form>
+                            <br>
+                            {% endfor %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="text-center text-muted py-4">No pending prescriptions.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Issued Drugs Table Grouped by Patient -->
+    <div class="card mb-4 shadow border-0">
+        <div class="card-header bg-gradient-info text-white d-flex align-items-center">
+            <i class="fas fa-user-check me-2"></i>
+            <h4 class="mb-0">Issued Drugs (Grouped by Patient)</h4>
+        </div>
+        <div class="card-body table-responsive">
+            {% regroup issued_drugs by patient as issued_groups %}
+            {% if issued_groups %}
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Patient</th>
+                        <th>Drugs</th>
+                        <th>Date Issued</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for group in issued_groups %}
+                    <tr>
+                        <td class="fw-bold text-primary">{{ group.grouper }}</td>
+                        <td>
+                            <ul class="list-unstyled mb-0">
+                                {% for issue in group.list %}
+                                <li>
+                                    <span class="fw-semibold">{{ issue.drug.name }}</span> <span class="badge bg-secondary">x{{ issue.quantity_issued }}</span>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                        <td>
+                            <ul class="list-unstyled mb-0">
+                                {% for issue in group.list %}
+                                <li>{{ issue.created_at|date:'Y-m-d H:i' }}</li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="text-center text-muted py-4">No issued drugs yet.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Outstanding Bills Table -->
+    <div class="card mb-4 shadow border-0">
+        <div class="card-header bg-gradient-dark text-white d-flex align-items-center">
+            <i class="fas fa-file-invoice-dollar me-2"></i>
+            <h4 class="mb-0">Outstanding Bills (Medication Charges)</h4>
+        </div>
+        <div class="card-body table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Patient</th>
+                        <th>Total Medication Charges (KSH)</th>
+                        <th>Total Bill (KSH)</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bill in bills %}
+                    <tr>
+                        <td class="fw-bold text-primary">{{ bill.patient }}</td>
+                        <td>{{ bill.details.medication_charge|floatformat:2 }}</td>
+                        <td>{{ bill.total_amount|floatformat:2 }}</td>
+                        <td>
+                            {% if bill.is_paid %}
+                                <span class="badge bg-success">Paid</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark">Unpaid</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if not bill.is_paid %}
+                            <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="mark_bill_paid">
+                                <input type="hidden" name="bill_id" value="{{ bill.id }}">
+                                <button type="submit" class="btn btn-success btn-sm"><i class="fas fa-money-check-alt"></i> Mark as Paid</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" class="text-center">No outstanding bills.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .gradient-card-green {
+        background: linear-gradient(135deg, #e0f7fa 0%, #b2dfdb 100%);
+    }
+    .gradient-card-yellow {
+        background: linear-gradient(135deg, #fffde7 0%, #ffe082 100%);
+    }
+    .gradient-card-blue {
+        background: linear-gradient(135deg, #e3f2fd 0%, #90caf9 100%);
+    }
+    .bg-gradient-warning {
+        background: linear-gradient(90deg, #fffde7 0%, #ffe082 100%) !important;
+    }
+    .bg-gradient-info {
+        background: linear-gradient(90deg, #e3f2fd 0%, #90caf9 100%) !important;
+    }
+    .bg-gradient-dark {
+        background: linear-gradient(90deg, #232526 0%, #414345 100%) !important;
+    }
+    .btn-gradient-primary {
+        background: linear-gradient(90deg, #1976d2 0%, #64b5f6 100%);
+        color: #fff;
+        border: none;
+    }
+    .btn-gradient-primary:hover {
+        background: linear-gradient(90deg, #1565c0 0%, #42a5f5 100%);
+        color: #fff;
+    }
+    .card { border-radius: 1rem; }
+    .card-header { font-size: 1.2rem; font-weight: 600; }
+    .table th, .table td { vertical-align: middle; }
+    .btn-sm { padding: 0.25rem 0.75rem; font-size: 0.95rem; }
+    .badge { font-size: 1rem; }
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
+{% endblock %}

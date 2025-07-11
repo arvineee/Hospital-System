@@ -150,3 +150,14 @@ def reject_ultrasound_request(request, request_id):
         us_request.save()
         return redirect('ultrasound_requests_list')
     return redirect('ultrasound_requests_list')
+
+def radiology_dashboard(request):
+    ultrasounds = Ultrasound.objects.all()
+    pending_requests = UltrasoundRequest.objects.filter(is_completed=False)
+    completed_requests = UltrasoundRequest.objects.filter(is_completed=True)
+    context = {
+        'ultrasounds': ultrasounds,
+        'pending_requests': pending_requests,
+        'completed_requests': completed_requests,
+    }
+    return render(request, 'radiology/radiology_dashboard.html', context)

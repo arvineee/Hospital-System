@@ -1,8 +1,31 @@
+
 from .models import Billing, PaymentHistory
-# --- Update Payment View ---
 from django.views.decorators.http import require_http_methods
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.core.mail import mail_admins
+from django.conf import settings
+from django.shortcuts import render, redirect
+from django.http import HttpResponse
+from django.contrib import messages
+from django.urls import reverse
+from .models import Patient_register, PatientHistory,Appointment
+from drugs.models import DrugIssue
+from django.contrib.auth.decorators import login_required
+from drugs.models import Drug, DrugIssue 
+from django.contrib.auth.models import User
+from django.shortcuts import get_object_or_404
+from labaratory.models import Labaratory
+from labaratory.models import LabaratoryTestResult, LabaratoryTest
+from radiology.models import Ultrasound
+from django.utils import timezone
+from datetime import datetime,timedelta
+from django.db.models import Q 
+import logging
+from radiology.models import UltrasoundRequest
+
+logger = logging.getLogger(__name__)
+
 
 
 @login_required
@@ -35,6 +58,111 @@ def update_payment(request, bill_id):
             bill.payment_reference = payment_reference
             bill.updated_at = timezone.now()
             bill.update_status()
+            # If fully paid, mark as paid and clear due
+            if bill.due_amount <= 0:
+                bill.is_paid = True
+                bill.due_amount = 0
+            bill.save(update_fields=["paid_amount", "due_amount", "payment_method", "payment_reference", "updated_at", "is_paid", "status"])
+
+            # --- Notify Admins on Payment ---
+            try:
+                from django.core.mail import EmailMultiAlternatives
+                from io import BytesIO
+                from reportlab.lib.pagesizes import A5
+                from reportlab.lib import colors
+                from reportlab.lib.units import mm
+                from reportlab.pdfgen import canvas
+                from reportlab.lib.styles import getSampleStyleSheet
+                from reportlab.platypus import Paragraph, Table, TableStyle, SimpleDocTemplate, Spacer
+                subject = f"[HMS] Payment Received for {patient.name} (Bill #{bill.id})"
+                text_message = (
+                    f"A payment has been made for patient: {patient.name}\n"
+                    f"Patient ID: {patient.id}\n"
+                    f"Bill ID: {bill.id}\n"
+                    f"Amount Paid: {paid_amount}\n"
+                    f"Payment Method: {payment_method}\n"
+                    f"Payment Reference: {payment_reference}\n"
+                    f"Paid By: {request.user.get_full_name() or request.user.username}\n"
+                    f"Date: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+                    f"Current Bill Status: {bill.status}\n"
+                    f"Total Amount: {bill.total_amount}\n"
+                    f"Paid Amount: {bill.paid_amount}\n"
+                    f"Due Amount: {bill.due_amount}\n"
+                )
+                html_message = f"""
+                <html>
+                <body style='font-family: Arial, sans-serif; color: #222;'>
+                    <h2 style='color: #1976d2;'>Payment Received for {patient.name}</h2>
+                    <table style='border-collapse: collapse;'>
+                        <tr><td><b>Patient ID:</b></td><td>{patient.id}</td></tr>
+                        <tr><td><b>Bill ID:</b></td><td>{bill.id}</td></tr>
+                        <tr><td><b>Amount Paid:</b></td><td style='color: #388e3c;'>Ksh {paid_amount}</td></tr>
+                        <tr><td><b>Payment Method:</b></td><td>{payment_method}</td></tr>
+                        <tr><td><b>Payment Reference:</b></td><td>{payment_reference}</td></tr>
+                        <tr><td><b>Paid By:</b></td><td>{request.user.get_full_name() or request.user.username}</td></tr>
+                        <tr><td><b>Date:</b></td><td>{timezone.now().strftime('%Y-%m-%d %H:%M:%S')}</td></tr>
+                        <tr><td><b>Current Bill Status:</b></td><td>{bill.status}</td></tr>
+                        <tr><td><b>Total Amount:</b></td><td>Ksh {bill.total_amount}</td></tr>
+                        <tr><td><b>Paid Amount:</b></td><td>Ksh {bill.paid_amount}</td></tr>
+                        <tr><td><b>Due Amount:</b></td><td style='color: #d32f2f;'>Ksh {bill.due_amount}</td></tr>
+                    </table>
+                </body>
+                </html>
+                """
+                # Generate modern PDF receipt (A5 size, branding, table, clear layout)
+                buffer = BytesIO()
+                doc = SimpleDocTemplate(buffer, pagesize=A5, rightMargin=20, leftMargin=20, topMargin=20, bottomMargin=20)
+                styles = getSampleStyleSheet()
+                elements = []
+                elements.append(Paragraph("<b>HMS Hospital System</b>", styles['Title']))
+                elements.append(Spacer(1, 6 * mm))
+                elements.append(Paragraph(f"<b>Payment Receipt</b>", styles['Heading2']))
+                elements.append(Spacer(1, 4 * mm))
+                elements.append(Paragraph(f"<b>Date:</b> {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal']))
+                elements.append(Spacer(1, 2 * mm))
+                # Patient and Bill Info Table
+                data = [
+                    ["Patient Name", patient.name],
+                    ["Patient ID", patient.id],
+                    ["Bill ID", bill.id],
+                    ["Amount Paid", f"Ksh {paid_amount}"],
+                    ["Payment Method", payment_method],
+                    ["Payment Reference", payment_reference],
+                    ["Paid By", request.user.get_full_name() or request.user.username],
+                    ["Current Bill Status", bill.status],
+                    ["Total Amount", f"Ksh {bill.total_amount}"],
+                    ["Paid Amount", f"Ksh {bill.paid_amount}"],
+                    ["Due Amount", f"Ksh {bill.due_amount}"],
+                ]
+                table = Table(data, colWidths=[80*mm, 60*mm])
+                table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.lightblue),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                    ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+                    ('FONTSIZE', (0, 0), (-1, -1), 10),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+                    ('BACKGROUND', (0, 1), (-1, -1), colors.whitesmoke),
+                    ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+                ]))
+                elements.append(table)
+                elements.append(Spacer(1, 8 * mm))
+                elements.append(Paragraph("Thank you for your payment!", styles['Italic']))
+                doc.build(elements)
+                pdf_data = buffer.getvalue()
+                buffer.close()
+                from django.conf import settings
+                admin_emails = [email for _, email in getattr(settings, 'ADMINS', [('Admin', 'admin@example.com')])]
+                msg = EmailMultiAlternatives(subject, text_message, settings.DEFAULT_FROM_EMAIL, admin_emails)
+                msg.attach_alternative(html_message, "text/html")
+                msg.attach(f"receipt_bill_{bill.id}.pdf", pdf_data, "application/pdf")
+                msg.send(fail_silently=True)
+                # Save PDF to patient receipt for download/print (optional: save to model or media if needed)
+                request.session['last_receipt_pdf'] = pdf_data.hex()
+            except Exception as notify_exc:
+                # Log or print error, but don't block payment
+                print(f"Admin notification failed: {notify_exc}")
+
             messages.success(request, "Payment status updated successfully.")
             return redirect("billing", id=patient.id)
         except Exception as e:
@@ -43,26 +171,6 @@ def update_payment(request, bill_id):
     # Get payment history for display
     payment_history = bill.payment_history.order_by('-timestamp')
     return render(request, "patients/update_payment.html", {"bill": bill, "patient": patient, "payment_history": payment_history})
-from django.shortcuts import render, redirect
-from django.http import HttpResponse
-from django.contrib import messages
-from django.urls import reverse
-from .models import Patient_register, PatientHistory,Appointment
-from drugs.models import DrugIssue
-from django.contrib.auth.decorators import login_required
-from drugs.models import Drug, DrugIssue 
-from django.contrib.auth.models import User
-from django.shortcuts import get_object_or_404
-from labaratory.models import Labaratory
-from labaratory.models import LabaratoryTestResult, LabaratoryTest
-from radiology.models import Ultrasound
-from django.utils import timezone
-from datetime import datetime,timedelta
-from django.db.models import Q 
-import logging
-from radiology.models import UltrasoundRequest
-
-logger = logging.getLogger(__name__)
 
 # Create your views here.
 def all_patients(request):
@@ -362,13 +470,27 @@ def billing(request, id):
             }
         )
         # Always update bill with latest totals/details
-        bill_obj.total_amount = total
-        bill_obj.due_amount = total - bill_obj.paid_amount
-        bill_obj.details = details
-        bill_obj.save()
+        # If the new total is greater than what was previously billed, update the bill and mark as unpaid
+        bill_changed = False
+        if bill_obj.total_amount != total or bill_obj.details != details:
+            bill_obj.total_amount = total
+            bill_obj.details = details
+            # If the new total is greater than paid, mark as unpaid and update due
+            if bill_obj.paid_amount < total:
+                bill_obj.is_paid = False
+                bill_obj.due_amount = total - bill_obj.paid_amount
+            else:
+                bill_obj.due_amount = 0
+                bill_obj.is_paid = True
+            bill_obj.save(update_fields=["total_amount", "due_amount", "details", "is_paid"])
+            bill_changed = True
 
         # Prepare context for template
         payment_history = bill_obj.payment_history.order_by('-timestamp')
+        # Only redirect if bill is truly fully paid and up-to-date
+        if bill_obj.is_paid and bill_obj.due_amount <= 0 and not bill_changed:
+            messages.success(request, "This bill is fully paid. No outstanding charges remain.")
+            return redirect('pat_view', id=patient.id)
         context = {
             'patient': patient,
             'drug_issues': drug_issues,
@@ -379,6 +501,11 @@ def billing(request, id):
             'current_date': current_date,
             'payment_history': payment_history,
         }
+        # Provide PDF receipt for patient if available
+        import base64
+        receipt_pdf = request.session.pop('last_receipt_pdf', None)
+        if receipt_pdf:
+            context['receipt_pdf'] = base64.b64encode(bytes.fromhex(receipt_pdf)).decode('utf-8')
         return render(request, 'patients/billing.html', context)
     except Patient_register.DoesNotExist:
         messages.error(request, "Patient not found.")

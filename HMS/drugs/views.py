@@ -1,6 +1,8 @@
 from django.shortcuts import render,redirect
 from .models import Drug, DrugIssue
 from django.contrib import messages
+from patients.models import Billing, Patient_register
+from django.db.models import Q
 
 
 def all_drugs(request):
@@ -133,3 +135,95 @@ def stock_out_warning(request):
 
     
     return render(request, 'drugs/stock_out_warning.html', {'out_of_stock_drugs': out_of_stock_drugs})
+
+def pharmacy_dashboard(request):
+    """
+    Modern pharmacy dashboard: shows all drugs, prescribed drugs, issued drugs, and allows marking as given/not given.
+    Integrates with billing to update charges and payment status.
+    """
+   
+    # All drugs in stock
+    drugs = Drug.objects.all()
+    # All prescriptions (DrugIssue) that are not yet marked as given
+    pending_issues = DrugIssue.objects.filter(given=False)
+    # All issued drugs (history)
+    issued_drugs = DrugIssue.objects.filter(given=True)
+
+    # Handle marking as given or not given
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        issue_id = request.POST.get('issue_id')
+        if action == 'mark_given' and issue_id:
+            try:
+                issue = DrugIssue.objects.get(id=issue_id)
+                issue.given = True
+                issue.save()
+                # Remove from bill charges if not given
+                # Find the bill for this patient
+                bill = Billing.objects.filter(patient=issue.patient).last()
+                if bill:
+                    # Remove this drug's charge from bill.details and recalculate
+                    details = bill.details or {}
+                    med_charge = details.get('medication_charge', 0)
+                    med_charge -= float(issue.drug.price) * int(issue.quantity_issued)
+                    details['medication_charge'] = max(med_charge, 0)
+                    # Recalculate total
+                    details['total'] = sum([
+                        float(details.get('consultation_charge', 0)),
+                        float(details.get('room_charge', 0)),
+                        float(details.get('medication_charge', 0)),
+                        float(details.get('laboratory_charge', 0)),
+                        float(details.get('ultrasound_charge', 0)),
+                    ])
+                    bill.details = details
+                    bill.total_amount = details['total']
+                    bill.save()
+                messages.success(request, 'Drug marked as given and bill updated.')
+            except DrugIssue.DoesNotExist:
+                messages.error(request, 'Drug issue not found.')
+        elif action == 'mark_not_given' and issue_id:
+            try:
+                issue = DrugIssue.objects.get(id=issue_id)
+                issue.given = False
+                issue.save()
+                # Add back to bill charges
+                bill = Billing.objects.filter(patient=issue.patient).last()
+                if bill:
+                    details = bill.details or {}
+                    med_charge = details.get('medication_charge', 0)
+                    med_charge += float(issue.drug.price) * int(issue.quantity_issued)
+                    details['medication_charge'] = med_charge
+                    details['total'] = sum([
+                        float(details.get('consultation_charge', 0)),
+                        float(details.get('room_charge', 0)),
+                        float(details.get('medication_charge', 0)),
+                        float(details.get('laboratory_charge', 0)),
+                        float(details.get('ultrasound_charge', 0)),
+                    ])
+                    bill.details = details
+                    bill.total_amount = details['total']
+                    bill.save()
+                messages.success(request, 'Drug marked as not given and bill updated.')
+            except DrugIssue.DoesNotExist:
+                messages.error(request, 'Drug issue not found.')
+        elif action == 'mark_bill_paid':
+            bill_id = request.POST.get('bill_id')
+            try:
+                bill = Billing.objects.get(id=bill_id)
+                bill.is_paid = True
+                bill.status = 'paid'
+                bill.save()
+                messages.success(request, 'Bill marked as paid.')
+            except Billing.DoesNotExist:
+                messages.error(request, 'Bill not found.')
+        return redirect('pharmacy_dashboard')
+
+    # For dashboard display: show all bills with outstanding medication charges
+    bills = Billing.objects.filter(details__medication_charge__gt=0)
+    context = {
+        'drugs': drugs,
+        'pending_issues': pending_issues,
+        'issued_drugs': issued_drugs,
+        'bills': bills,
+    }
+    return render(request, 'drugs/pharmacy_dashboard.html', context)

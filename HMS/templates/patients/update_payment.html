@@ -17,7 +17,7 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Amount Paid (KSH)</label>
-                            <input type="number" class="form-control" name="paid_amount" min="0" max="{{ bill.due_amount }}" value="{{ bill.paid_amount }}" required>
+                            <input type="number" class="form-control" name="paid_amount" min="0" max="{{ bill.due_amount }}" value="{{ bill.due_amount }}" readonly required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Payment Method</label>

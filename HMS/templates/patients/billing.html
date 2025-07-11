@@ -215,6 +215,11 @@
         <button onclick="window.print()" class="btn btn-primary">
             <i class="fas fa-print"></i> Print Bill
         </button>
+        {% if receipt_pdf %}
+        <a href="data:application/pdf;base64,{{ receipt_pdf }}" download="receipt_bill_{{ bill.id }}.pdf" class="btn btn-outline-info">
+            <i class="fas fa-file-pdf"></i> Download Receipt (PDF)
+        </a>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
