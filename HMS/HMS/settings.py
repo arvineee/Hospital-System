@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
-# import psycopg
+from decimal import Decimal
 import os
 import ast
 from dotenv import load_dotenv
@@ -139,8 +139,11 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 # Hospital name
 HOSPITAL_NAME = os.getenv('HOSPITAL_NAME', 'HMS Hospital System')
+# Fixed charges
+CONSULTATION_FEE = Decimal(os.getenv('Consultation_Fee'))
+ROOM_FEE_PER_DAY = Decimal(os.getenv('Room_Fee'))
 
-# Email configuration (from .env)
+
 
 # Read and parse ADMINS
 raw_admin = os.getenv("ADMINS", "Admin,admin@example.com")
@@ -148,11 +151,11 @@ parts = raw_admin.split(",")
 ADMINS = [(parts[0].strip(), parts[1].strip())] if len(parts) == 2 else []
 
 # Email settings
-DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@yourdomain.com')
-EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.yourprovider.com')
-EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
+EMAIL_HOST = os.getenv('EMAIL_HOST')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT'))
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
 EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
 

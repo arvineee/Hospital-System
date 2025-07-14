@@ -846,8 +846,8 @@ def billing(request, id):
             days_admitted = 1
 
         # --- Calculate Charges (using Decimal for accuracy) ---
-        consultation_charge = Decimal('100.00')
-        daily_room_charge = Decimal('0.00') # This is currently hardcoded to 0.00
+        consultation_charge = settings.CONSULTATION_FEE
+        daily_room_charge = settings.ROOM_FEE_PER_DAY
         total_room_charge = daily_room_charge * Decimal(days_admitted)
 
         medication_total = sum(Decimal(str(issue.drug.price)) * issue.quantity_issued for issue in drug_issues_to_bill)
