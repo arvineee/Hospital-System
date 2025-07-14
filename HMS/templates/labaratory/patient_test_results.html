@@ -103,11 +103,12 @@
            
 <div class="mt-4">
     <div class="btn-group" role="group">
-        <a href="{% url 'pat_view' patient.id %}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Back to Patient
-        </a>
+       <a href="{% url 'pat_view' patient.id %}" 
+                           class="btn btn-info">
+                            <i class="fas fa-user"></i> Back to patient
+                        </a>
         
-        {% if not patient.is_discharged and available_tests %}
+        <!-- {% if not patient.is_discharged and available_tests %}
         <div class="dropdown">
             <button class="btn btn-primary dropdown-toggle" type="button" 
                     data-bs-toggle="dropdown" aria-expanded="false">
@@ -124,7 +125,7 @@
                 {% endfor %}
             </ul>
         </div>
-        {% endif %}
+        {% endif %} -->
     </div>
 </div>
         </div>

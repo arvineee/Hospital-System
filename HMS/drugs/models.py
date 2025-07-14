@@ -1,7 +1,6 @@
 from django.contrib.auth.models import User
 from django.db import models
-from patients.models import Patient_register  
-
+from patients.models import Patient_register,Billing
 # Over the Counter (OTC) Sale model for professional pharmacy OTC sales
 class OTCSale(models.Model):
     drug = models.ForeignKey('Drug', on_delete=models.CASCADE)
@@ -50,6 +49,8 @@ class DrugIssue(models.Model):
     quantity_issued = models.IntegerField()
     issue_date = models.DateTimeField(auto_now_add=True)
     given = models.BooleanField(default=False)
+    bill = models.ForeignKey(Billing, on_delete=models.SET_NULL, null=True, blank=True, related_name='drug_issues_for_bill')
+
 
     def __str__(self):
         return f"Issue of {self.drug.name} to {self.patient.name}"

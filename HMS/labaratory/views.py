@@ -5,7 +5,9 @@ from datetime import datetime
 from patients.models import Patient_register
 from .models import Labaratory, LabaratoryTest, LabaratoryTestResult, LabaratoryAppointment, Laboratory_requests
 # Create your views here.
-
+from django.contrib.auth.decorators import login_required
+from patients.views import get_active_bill_for_patient
+import logging
 
 def dashboard(request):
     if request.user.is_authenticated:
@@ -228,29 +230,57 @@ def patient_test_results(request, patient_id):
     
 
 
-def add_test_result(request, test_id, patient_id):
-    test = get_object_or_404(LabaratoryTest, id=test_id)
-    patient = get_object_or_404(Patient_register, id=patient_id)
-    
+@login_required
+def add_test_result(request, result_id): # Renamed 'test_id' to 'result_id' for clarity
+    """
+    Allows lab technicians to add or update results for a specific lab test request.
+    This function expects to update an *existing* LabaratoryTestResult object.
+    """
+    result = get_object_or_404(LabaratoryTestResult, id=result_id)
+    patient = result.patient # Get patient from the existing result object
+    labaratory_test = result.labaratory_test # Get the test type
+
     if request.method == 'POST':
         try:
-            result = LabaratoryTestResult(
-                labaratory_test=test,
-                patient=patient,
-                test_result=request.POST.get('test_result'),
-                notes=request.POST.get('notes', '')
-            )
-            result.save()
-            messages.success(request, 'Test result added successfully.')
+            test_result_text = request.POST.get('test_result', '')
+            notes = request.POST.get('notes', '')
+            status = request.POST.get('status', 'Completed') # Default to Completed if not provided
+
+            # Update the result object
+            result.test_result = test_result_text
+            result.notes = notes
+            result.status = status
+            result.test_date = timezone.now() # Update test_date to completion date/time
+
+            # Ensure the bill is assigned if it wasn't during the request phase
+            # This handles edge cases where a result might be created directly without a request
+            # or if the initial request didn't properly link to a bill (less likely with new logic).
+            if not result.bill:
+                active_bill = get_active_bill_for_patient(patient)
+                if active_bill:
+                    result.bill = active_bill
+                    messages.info(request, "Active bill found and assigned to this lab result.")
+                else:
+                    messages.warning(request, "No active bill found for the patient; bill not assigned to this result.")
+
+            # Save the updated result
+            result.save() # Save all modified fields
+
+            messages.success(request, f"Test result for {patient.name} - {labaratory_test.test_name} updated successfully.")
             return redirect('patient_test_results', patient_id=patient.id)
+
         except Exception as e:
-            messages.error(request, f'Error adding test result: {str(e)}')
-    
+            logging.logger.exception(f"Error updating test result {result_id} for patient {patient.id}: {e}")
+            messages.error(request, f"Error updating test result: {str(e)}")
+            return redirect('add_test_result', result_id=result.id) # Redirect back to the form on error
+
     context = {
-        'test': test,
         'patient': patient,
+        'result': result,
+        'labaratory_test': labaratory_test # Pass the test type for context in template
     }
-    return render(request, 'labaratory/add_test_result.html', context)
+    return render(request, 'labaratory/add_test_result.html', context) # Assuming this template exists
+
 
 def labaratory_test_result_update(request, labaratory_id, test_id, result_id):
     try:

@@ -5,7 +5,6 @@
 
 {% block content %}
 <div class="container mt-4">
-    <!-- Patient Information Card -->
     <div class="card mb-4">
         <div class="card-header bg-primary text-white">
             <h3 class="mb-0">Patient Information</h3>
@@ -25,204 +24,144 @@
                     <p><strong>Days Admitted:</strong> {{ bill.details.days_admitted }}</p>
                     <p><strong>Bill Created:</strong> {{ bill.created_at|date:"F d, Y H:i" }}</p>
                     <p><strong>Last Updated:</strong> {{ bill.updated_at|date:"F d, Y H:i" }}</p>
-                    <p><strong>Status:</strong> 
-                        {% if bill.is_paid %}
-                            <span class="badge bg-success">Paid</span>
-                        {% else %}
-                            <span class="badge bg-warning text-dark">Unpaid</span>
-                        {% endif %}
-                    </p>
                 </div>
             </div>
         </div>
     </div>
 
-    {% if bill.details.previous_pending_due %}
-    <div class="alert alert-warning d-flex align-items-center gap-2" style="font-size:1.1em;">
-        <i class="fas fa-exclamation-triangle fa-lg me-2"></i>
-        <div>
-            <strong>Previous Due Carried Forward:</strong> <span class="text-danger">KSH {{ bill.details.previous_pending_due|floatformat:2 }}</span><br>
-            <span class="fst-italic">Charges shown below are only from the current visit. Previous settled amounts are not recharged.</span>
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- Room Charges -->
-    {% if bill.details.room_charge > 0 %}
     <div class="card mb-4">
         <div class="card-header bg-info text-white">
-            <h3 class="mb-0">Room Charges</h3>
+            <h3 class="mb-0">Current Billing Details (Bill ID: {{ bill.id }})</h3>
         </div>
         <div class="card-body">
-            <table class="table table-bordered">
-                <thead class="table-secondary">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <table class="table table-bordered table-striped">
+                <thead class="table-dark">
                     <tr>
-                        <th>Days Admitted</th>
-                        <th>Daily Rate (KSH)</th>
-                        <th class="text-end">Total (KSH)</th>
+                        <th>Item</th>
+                        <th>Details</th>
+                        <th>Quantity/Days</th>
+                        <th>Unit Price (Ksh)</th>
+                        <th>Amount (Ksh)</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
+                        <td>Consultation Fee</td>
+                        <td>Initial consultation for admission</td>
+                        <td>1</td>
+                        <td>100.00</td>
+                        <td>{{ bill.details.consultation_charge|floatformat:2 }}</td>
+                    </tr>
+                    <tr>
+                        <td>Room Charge</td>
+                        <td>Daily accommodation fee</td>
                         <td>{{ bill.details.days_admitted }}</td>
                         <td>{{ bill.details.daily_room_rate|floatformat:2 }}</td>
-                        <td class="text-end">{{ bill.details.room_charge|floatformat:2 }}</td>
+                        <td>{{ bill.details.room_charge|floatformat:2 }}</td>
                     </tr>
+                    {% for issue in drug_issues %}
+                    <tr>
+                        <td>Medication</td>
+                        <td>{{ issue.drug.name }}</td>
+                        <td>{{ issue.quantity_issued }}</td>
+                        <td>{{ issue.drug.price|floatformat:2 }}</td>
+                        <td>{{ issue.drug.price|multiply:issue.quantity_issued|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% for result in lab_results %}
+                    <tr>
+                        <td>Laboratory Test</td>
+                        <td>{{ result.labaratory_test.test_name }}</td>
+                        <td>1</td>
+                        <td>{{ result.labaratory_test.test_price|floatformat:2 }}</td>
+                        <td>{{ result.labaratory_test.test_price|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% for us in ultrasounds %}
+                    <tr>
+                        <td>Ultrasound Scan</td>
+                        <td>{{ us.scan_type }}</td>
+                        <td>1</td>
+                        <td>{{ us.price|floatformat:2 }}</td>
+                        <td>{{ us.price|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
                 </tbody>
+                <tfoot>
+                    {% if bill.details.previous_pending_due %}
+                    <tr>
+                        <td colspan="4" class="text-right font-weight-bold">Previous Balance Carried Forward:</td>
+                        <td class="text-right font-weight-bold">
+                            Ksh {{ bill.details.previous_pending_due|floatformat:2 }}
+                        </td>
+                    </tr>
+                    {% endif %}
+                    <tr class="table-secondary">
+                        <td colspan="4" class="text-right font-weight-bold">Subtotal:</td>
+                        <td class="text-right font-weight-bold">
+                            Ksh {{ bill.total_amount|floatformat:2 }}
+                        </td>
+                    </tr>
+                    <tr class="table-success">
+                        <td colspan="4" class="text-right font-weight-bold">Amount Paid:</td>
+                        <td class="text-right font-weight-bold">
+                            Ksh {{ bill.paid_amount|floatformat:2 }}
+                        </td>
+                    </tr>
+                    <tr class="{% if bill.due_amount > 0 %}table-danger{% else %}table-success{% endif %}">
+                        <td colspan="4" class="text-right font-weight-bold">Amount Due:</td>
+                        <td class="text-right font-weight-bold">
+                            Ksh {{ bill.due_amount|floatformat:2 }}
+                        </td>
+                    </tr>
+                </tfoot>
             </table>
         </div>
     </div>
-    {% endif %}
 
-    <!-- Medication Charges -->
-    {% if bill.details.medication_charge > 0 %}
-    <div class="card mb-4">
-        <div class="card-header bg-info text-white">
-            <h3 class="mb-0">Medication Charges</h3>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-bordered">
-                    <thead class="table-secondary">
-                        <tr>
-                            <th>Drug Name</th>
-                            <th>Quantity</th>
-                            <th>Unit Price (KSH)</th>
-                            <th class="text-end">Total (KSH)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for issue in drug_issues %}
-                        <tr>
-                            <td>{{ issue.drug.name }}</td>
-                            <td>{{ issue.quantity_issued }}</td>
-                            <td>{{ issue.drug.price|floatformat:2 }}</td>
-                            <td class="text-end">{{ issue.drug.price|multiply:issue.quantity_issued|floatformat:2 }}</td>
-                        </tr>
-                        {% endfor %}
-                        <tr class="table-info">
-                            <td colspan="3" class="text-end"><strong>Total Medication Charges:</strong></td>
-                            <td class="text-end"><strong>{{ bill.details.medication_charge|floatformat:2 }}</strong></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- Laboratory Charges -->
-    {% if bill.details.laboratory_charge > 0 %}
-    <div class="card mb-4">
-        <div class="card-header bg-info text-white">
-            <h3 class="mb-0">Laboratory Charges</h3>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-bordered">
-                    <thead class="table-secondary">
-                        <tr>
-                            <th>Test Name</th>
-                            <th>Laboratory</th>
-                            <th>Date</th>
-                            <th class="text-end">Price (KSH)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for result in lab_results %}
-                        <tr>
-                            <td>{{ result.labaratory_test.test_name }}</td>
-                            <td>{{ result.labaratory_test.labaratory.labaratory_name }}</td>
-                            <td>{{ result.test_date|date:"Y-m-d" }}</td>
-                            <td class="text-end">{{ result.labaratory_test.test_price|floatformat:2 }}</td>
-                        </tr>
-                        {% endfor %}
-                        <tr class="table-info">
-                            <td colspan="3" class="text-end"><strong>Total Laboratory Charges:</strong></td>
-                            <td class="text-end"><strong>{{ bill.details.laboratory_charge|floatformat:2 }}</strong></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- Ultrasound Charges -->
-    {% if bill.details.ultrasound_charge > 0 %}
-    <div class="card mb-4">
-        <div class="card-header bg-info text-white">
-            <h3 class="mb-0">Ultrasound Charges</h3>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-bordered">
-                    <thead class="table-secondary">
-                        <tr>
-                            <th>Type</th>
-                            <th>Date</th>
-                            <th>Findings</th>
-                            <th class="text-end">Price (KSH)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for us in ultrasounds %}
-                        <tr>
-                            <td>{{ us.ultrasound_type }}</td>
-                            <td>{{ us.date|date:"Y-m-d" }}</td>
-                            <td>{{ us.findings|default:'-' }}</td>
-                            <td class="text-end">{{ us.price|floatformat:2 }}</td>
-                        </tr>
-                        {% endfor %}
-                        <tr class="table-info">
-                            <td colspan="3" class="text-end"><strong>Total Ultrasound Charges:</strong></td>
-                            <td class="text-end"><strong>{{ bill.details.ultrasound_charge|floatformat:2 }}</strong></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- Bill Summary -->
     <div class="card mb-4">
         <div class="card-header bg-dark text-white">
-            <h3 class="mb-0">Bill Summary</h3>
+            <h3 class="mb-0">Payment History</h3>
         </div>
         <div class="card-body">
-            <table class="table table-bordered">
-                <tbody>
-                    <tr>
-                        <td><strong>Consultation Charge:</strong></td>
-                        <td class="text-end">{{ bill.details.consultation_charge|floatformat:2 }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Room Charges:</strong></td>
-                        <td class="text-end">{{ bill.details.room_charge|floatformat:2 }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Medication Charges:</strong></td>
-                        <td class="text-end">{{ bill.details.medication_charge|floatformat:2 }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Laboratory Charges:</strong></td>
-                        <td class="text-end">{{ bill.details.laboratory_charge|floatformat:2 }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Ultrasound Charges:</strong></td>
-                        <td class="text-end">{{ bill.details.ultrasound_charge|floatformat:2 }}</td>
-                    </tr>
-                    <tr class="table-dark">
-                        <td><h4 class="mb-0"><strong>Total Bill:</strong></h4></td>
-                        <td class="text-end"><h4 class="mb-0">KSH {{ bill.total_amount|floatformat:2 }}</h4></td>
-                    </tr>
-                </tbody>
-            </table>
+            {% if payment_history %}
+                <table class="table table-bordered table-striped">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Amount Paid (Ksh)</th>
+                            <th>Method</th>
+                            <th>Reference</th>
+                            <th>Paid By</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in payment_history %}
+                        <tr>
+                            <td>{{ payment.timestamp|date:"F d, Y H:i" }}</td>
+                            <td>{{ payment.paid_amount|floatformat:2 }}</td>
+                            <td>{{ payment.payment_method }}</td>
+                            <td>{{ payment.payment_reference|default_if_none:"-" }}</td>
+                            <td>{{ payment.paid_by.get_full_name|default:payment.paid_by.username }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>No payment history for this bill yet.</p>
+            {% endif %}
         </div>
     </div>
 
-    <!-- Action Buttons -->
     <div class="d-flex flex-wrap justify-content-between mb-4 gap-2">
         <a href="{% url 'pat_view' patient.id %}" class="btn btn-secondary">
             <i class="fas fa-arrow-left"></i> Back to Patient
@@ -255,10 +194,6 @@
             color: #000 !important;
             -webkit-print-color-adjust: exact;
         }
-    }
-    .table td, .table th {
-        padding: 0.75rem;
-        vertical-align: middle;
     }
 </style>
 {% endblock %}

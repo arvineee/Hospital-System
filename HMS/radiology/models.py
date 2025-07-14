@@ -1,9 +1,10 @@
 from django.db import models
+from patients.models import Patient_register, Billing
 
 
 
 class Ultrasound(models.Model):
-    patient = models.CharField(max_length=100)
+    patient = models.ForeignKey(Patient_register, on_delete=models.CASCADE)
     date = models.DateField(auto_now_add=True)
     ultrasound_type = models.CharField(max_length=100)
     findings = models.TextField(blank=True, null=True)
@@ -11,6 +12,8 @@ class Ultrasound(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2, default=2000.00)  
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    bill = models.ForeignKey(Billing, on_delete=models.SET_NULL, null=True, blank=True, related_name='ultrasounds_for_bill')
+
     
 
     def __str__(self):

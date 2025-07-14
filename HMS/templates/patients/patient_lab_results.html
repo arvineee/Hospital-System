@@ -1,32 +1,45 @@
-{% extends 'base.html' %}
-{% block content %}
-<div class="container mt-5">
-    <h2>Lab Results for {{ patient.name }}</h2>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Test</th>
-                <th>Lab</th>
-                <th>Date</th>
-                <th>Status</th>
-                <th>Result</th>
-                <th>Notes</th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for result in results %}
-            <tr>
-                <td>{{ result.labaratory_test.test_name }}</td>
-                <td>{{ result.labaratory_test.labaratory.labaratory_name }}</td>
-                <td>{{ result.test_date|date:'Y-m-d H:i' }}</td>
-                <td>{{ result.status }}</td>
-                <td>{{ result.test_result|default:'-' }}</td>
-                <td>{{ result.notes|default:'-' }}</td>
-            </tr>
-        {% empty %}
-            <tr><td colspan="6">No lab results found.</td></tr>
-        {% endfor %}
-        </tbody>
-    </table>
-</div>
-{% endblock %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Payment Successful</title>
+    <script>
+        window.onload = function() {
+            const pdfUrl = "{{ pdf_url }}";
+            const pdfFilename = "{{ pdf_filename }}";
+
+            // Trigger PDF download
+            fetch(pdfUrl)
+                .then(response => {
+                    if (!response.ok) throw new Error("Failed to download PDF");
+                    return response.blob();
+                })
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = pdfFilename;
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                    window.URL.revokeObjectURL(url);
+                })
+                .catch(error => {
+                    console.error("Download error:", error);
+                    alert("Failed to download receipt PDF.");
+                });
+
+            // Redirect after short delay
+            setTimeout(function() {
+                window.location.href = "{{ profile_url }}";
+            }, 3000);
+        };
+    </script>
+</head>
+<body>
+    <div style="text-align:center; margin-top:50px;">
+        <h2>Payment Successful!</h2>
+        <p>Your receipt is being downloaded...</p>
+        <p>You will be redirected to your profile shortly.</p>
+    </div>
+</body>
+</html>

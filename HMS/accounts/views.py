@@ -63,7 +63,7 @@ def login(request):
             try:
                 user.userprofile
             except ObjectDoesNotExist:
-                UserProfile.objects.create(user=user, role='doctor')  # Default role, can be changed
+                UserProfile.objects.create(user=user, role='doctor')  
             auth_login(request, user)  
             return redirect(reverse('dashboard')) 
         else:

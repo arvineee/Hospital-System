@@ -1,5 +1,5 @@
 from django.db import models
-from patients.models import Patient_register
+from patients.models import Patient_register, Billing
 
 class Labaratory(models.Model):
     labaratory_name = models.CharField(max_length=100)
@@ -39,6 +39,8 @@ class LabaratoryTestResult(models.Model):
     test_date = models.DateTimeField(auto_now_add=True)
     notes = models.TextField(blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
+    bill = models.ForeignKey(Billing, on_delete=models.SET_NULL, null=True, blank=True, related_name='lab_results_for_bill')
+
     
     
     def __str__(self):

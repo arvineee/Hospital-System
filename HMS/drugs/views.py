@@ -1,6 +1,12 @@
 from django.shortcuts import render,redirect
 from .models import Drug, DrugIssue, OTCSale
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.db import transaction
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from decimal import Decimal
+import logging
 
 # OTC Sale View (with search)
 @login_required
@@ -50,6 +56,7 @@ def otc_sales_list(request):
 from django.contrib import messages
 from patients.models import Billing, Patient_register
 from django.db.models import Q
+from patients.views import get_active_bill_for_patient
 
 
 def all_drugs(request):
@@ -134,41 +141,98 @@ def drug_search(request):
         return render(request, 'drugs/search_drug.html', {'drugs': drugs})
 
     return render(request, 'drugs/search_drug.html')  
-def drug_issue(request):
+def drug_issue(request, patient_id):
+    """
+    Handles the creation of a new drug issue for a patient.
+    Assigns the drug issue to the patient's active bill and updates the bill's medication charge.
+    """
+    patient = get_object_or_404(Patient_register, id=patient_id)
+    drugs = Drug.objects.filter(quantity__gt=0).order_by('name') # Only show drugs in stock
+
     if request.method == 'POST':
-        drug_id = request.POST.get('drug_id')
-        quantity_issued = request.POST.get('quantity_issued')
+        drug_id = request.POST.get('drug')
+        quantity_str = request.POST.get('quantity_issued')
 
-        # Validate required fields
-        if not all([drug_id, quantity_issued]):
-            messages.error(request,"All fields are required.")
-            return render(request, 'drugs/issue_drug.html')
+        # Basic input validation
+        if not drug_id or not quantity_str:
+            messages.error(request, "Please select a drug and enter a quantity.")
+            # Pass existing context back on error to repopulate form
+            context = {'patient': patient, 'drugs': drugs}
+            return render(request, 'drugs/drug_issue_create.html', context)
 
-        # Check if drug exists
         try:
-            drug = Drug.objects.get(id=drug_id)
-        except Drug.DoesNotExist:
-            messages.error(request,"Drug does not exist.")
-            return render(request, 'drugs/issue_drug.html')
+            quantity = int(quantity_str)
+            if quantity <= 0:
+                messages.error(request, "Quantity must be a positive number.")
+                context = {'patient': patient, 'drugs': drugs}
+                return render(request, 'drugs/drug_issue_create.html', context)
 
-        # Check if sufficient quantity is available
-        if drug.quantity < int(quantity_issued):
-            messages.error(request,"Insufficient quantity available \nCheck the remaining stock.")
-            return render(request, 'drugs/issue_drug.html')
+            drug = get_object_or_404(Drug, id=drug_id)
+        except (ValueError, Drug.DoesNotExist):
+            messages.error(request, "Invalid drug or quantity provided.")
+            context = {'patient': patient, 'drugs': drugs}
+            return render(request, 'drugs/drug_issue_create.html', context)
 
-        # Create and save the drug issue record
-        drug_issue = DrugIssue(drug=drug, quantity_issued=quantity_issued)
-        drug_issue.save()
+        if drug.quantity < quantity:
+            messages.error(request, f"Insufficient stock for {drug.name}. Available: {drug.quantity}")
+            context = {'patient': patient, 'drugs': drugs}
+            return render(request, 'drugs/drug_issue_create.html', context)
 
-        # Update the drug quantity
-        drug.quantity -= int(quantity_issued)
-        drug.save()
+        # Get the patient's active bill
+        active_bill = get_active_bill_for_patient(patient)
+        if not active_bill:
+            messages.error(request, "No active bill found for this patient. Please ensure a bill is created or re-admit the patient if necessary.")
+            return redirect('pat_view', id=patient.id) # Use id consistent with patient view URL
 
-        # Redirect or return success response
-        messages.success(request, "Drug successfully issued.")
-        return redirect(all_drugs)  
-    drugs = Drug.objects.all()
-    return render(request, 'drugs/issue_drug.html', {'drugs': drugs})  
+        # Perform the drug issue and bill update within an atomic transaction
+        try:
+            with transaction.atomic():
+                # Create the DrugIssue record
+                DrugIssue.objects.create(
+                    drug=drug,
+                    patient=patient,
+                    quantity_issued=quantity,
+                    bill=active_bill,  # Link to the active bill
+                    given=False, # Mark as not yet given (e.g., pending pharmacy dispensing)
+                )
+
+                # Update drug quantity in stock
+                drug.quantity -= quantity
+                drug.save(update_fields=['quantity'])
+
+                # Update the active bill's medication_charge
+                if not active_bill.details:
+                    active_bill.details = {} # Ensure 'details' dictionary exists
+                
+                # Get current medication charge safely, convert to Decimal for calculation
+                current_med_charge = Decimal(str(active_bill.details.get('medication_charge', 0.0)))
+                item_cost = drug.price * Decimal(quantity)
+                
+                active_bill.details['medication_charge'] = float(current_med_charge + item_cost)
+
+                # Recalculate total_amount and due_amount for the bill
+                # It's important to use Decimal for financial calculations
+                active_bill.total_amount = Decimal(str(active_bill.total_amount)) + item_cost
+                active_bill.due_amount = Decimal(str(active_bill.due_amount)) + item_cost # Assuming no payment applied yet
+
+                active_bill.save(update_fields=['details', 'total_amount', 'due_amount'])
+
+            messages.success(request, f"{quantity} of {drug.name} issued to {patient.name} and bill updated.")
+            return redirect('pat_view', id=patient.id) # Redirect back to patient profile
+
+        except Exception as e:
+            logging.logger.exception(f"Error issuing drug or updating bill for patient {patient.id}: {e}")
+            messages.error(request, f"An error occurred while issuing drug and updating bill: {e}")
+            # Redirect to prevent double submission
+            return redirect('drug_issue_create', patient_id=patient.id)
+
+
+    context = {
+        'patient': patient,
+        'drugs': drugs,
+    }
+    return render(request, 'drugs/drug_issue_create.html', context)
+
 
 def stock_out_warning(request):
     # Get all drugs that are out of stock
