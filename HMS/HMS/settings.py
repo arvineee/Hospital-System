@@ -138,7 +138,7 @@ MEDIA_URL = "/media/"
 
 MEDIA_ROOT = BASE_DIR / "media"
 # Hospital name
-Hospital_name = os.getenv('HOSPITAL_NAME', 'HMS Hospital System')
+HOSPITAL_NAME = os.getenv('HOSPITAL_NAME', 'HMS Hospital System')
 
 # Email configuration (from .env)
 

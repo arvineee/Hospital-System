@@ -14,7 +14,6 @@ urlpatterns = [
     path('prescribe_drugs/<int:id>/', views.prescribe_drugs, name='prescribe_drugs'),
     path("drug_issued/<int:id>/", views.drug_issued, name="drug_issued"),
     path("drug_issued/", views.drug_issued, name="drug_issued"),  
-    path("patient_discharge/<int:id>/", views.patient_discharge, name="patient_discharge"),
     path("re_admit/<int:id>/", views.re_admit, name="re_admit"),
     path("billing/<int:id>/", views.billing, name="billing"),
     path('update_payment/<int:bill_id>/', views.update_payment, name='update_payment'),
@@ -30,6 +29,9 @@ urlpatterns = [
     path('view_patient_lab_results/<int:patient_id>/', views.view_patient_lab_results, name='view_patient_lab_results'),
     path('request_labaratory_test/<int:patient_id>/', request_labaratory_test, name='request_labaratory_test'),
     path('download_receipt/<int:bill_id>/', views.download_receipt, name='download_receipt'),
+    path('discharge/<int:patient_id>/', views.discharge_patient, name='patient_discharge'),
+    path('discharge/summary/<int:patient_id>/pdf/', views.generate_discharge_summary_pdf, name='generate_discharge_summary_pdf'),
+
     
 
 ]

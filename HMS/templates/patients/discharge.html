@@ -1,4 +1,3 @@
-<!-- filepath: /workspaces/codespaces-blank/HMS/templates/patients/discharge.html -->
 {% extends 'base.html' %}
 
 {% block title %}Discharge Patient{% endblock %}
@@ -6,13 +5,13 @@
 {% block content %}
 <div class="container py-5">
     <div class="row justify-content-center">
-        <div class="col-12 col-md-8 col-lg-6">
+        <div class="col-12 col-md-10 col-lg-8"> {# Increased column size for more content #}
             <div class="card shadow-lg border-0">
                 <div class="card-body p-4">
                     <div class="text-center mb-4">
                         <i class="fas fa-user-check fa-3x text-success mb-2"></i>
-                        <h2 class="fw-bold mb-1">Discharge Patient</h2>
-                        <p class="text-muted mb-0">Complete the form to discharge the patient.</p>
+                        <h2 class="fw-bold mb-1">Discharge Patient: {{ patient.name }}</h2>
+                        <p class="text-muted mb-0">Complete the form to discharge the patient and generate summary.</p>
                     </div>
                     <form method="POST" autocomplete="off">
                         {% csrf_token %}
@@ -24,12 +23,44 @@
                             <label for="dischargeDate" class="form-label">Discharge Date</label>
                             <input type="date" class="form-control" id="dischargeDate" name="discharge_date" required>
                         </div>
+
+                        <hr class="my-4">
+                        <h4 class="fw-bold mb-3 text-center text-primary">Discharge Summary Details</h4>
+
+                        <div class="mb-3">
+                            <label for="conditionAtDischarge" class="form-label">Condition at Discharge</label>
+                            <select class="form-select" id="conditionAtDischarge" name="condition_at_discharge" required>
+                                <option value="">--- Select Patient Condition ---</option>
+                                <option value="Stable">Stable</option>
+                                <option value="Improved">Improved</option>
+                                <option value="Unchanged">Unchanged</option>
+                                <option value="Deteriorated">Deteriorated</option>
+                                <option value="Deceased">Deceased</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="medicationsAtDischarge" class="form-label">Medications at Discharge <small class="text-muted">(List all, include dosage/frequency)</small></label>
+                            <textarea class="form-control" id="medicationsAtDischarge" name="medications_at_discharge" rows="4" placeholder="e.g., Paracetamol 500mg - 1 tab TID for 5 days&#10;Amoxicillin 250mg - 1 tab BID for 7 days"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="followUpInstructions" class="form-label">Follow-up Instructions <small class="text-muted">(e.g., Return date, contact for concerns)</small></label>
+                            <textarea class="form-control" id="followUpInstructions" name="follow_up_instructions" rows="4" placeholder="e.g., Return to clinic in 2 weeks (2025-07-28) for review by Dr. [Name].&#10;Contact the hospital if fever, excessive pain, or new symptoms develop."></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="dischargeNotes" class="form-label">Additional Discharge Summary Notes <small class="text-muted">(Brief hospital course, investigations, significant findings)</small></label>
+                            <textarea class="form-control" id="dischargeNotes" name="discharge_notes" rows="6" placeholder="e.g., Patient admitted with acute appendicitis. Underwent appendectomy on [Date]. Post-op course was uneventful. Wound clean and dry. Blood tests on [Date] showed normal inflammatory markers."></textarea>
+                        </div>
+
+
                         <div class="d-flex justify-content-between align-items-center mt-4">
                             <button type="submit" class="btn btn-success px-4">
-                                <i class="fas fa-check-circle me-2"></i>Discharge
+                                <i class="fas fa-check-circle me-2"></i> Discharge & Generate Summary
                             </button>
                             <a href="{% url 'all_patients' %}" class="btn btn-outline-secondary px-4">
-                                <i class="fas fa-times me-2"></i>Cancel
+                                <i class="fas fa-times me-2"></i> Cancel
                             </a>
                         </div>
                     </form>
@@ -45,7 +76,7 @@
         if (dateInput && !dateInput.value) {
             const today = new Date();
             const yyyy = today.getFullYear();
-            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const mm = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
             const dd = String(today.getDate()).padStart(2, '0');
             dateInput.value = `${yyyy}-${mm}-${dd}`;
         }

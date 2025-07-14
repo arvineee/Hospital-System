@@ -28,9 +28,12 @@ from reportlab.lib.styles import getSampleStyleSheet
 from io import BytesIO
 from django.core.mail import EmailMultiAlternatives
 from decimal import Decimal
+from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 from reportlab.lib.pagesizes import A5
 from reportlab.lib.units import mm
 from reportlab.lib import colors
+from reportlab.platypus import Paragraph, Table, TableStyle, SimpleDocTemplate, Spacer
+from reportlab.lib.units import cm
 import base64
 from django.http import HttpResponse
 from django.core.files.base import ContentFile
@@ -39,6 +42,19 @@ from labaratory.models import Labaratory, LabaratoryTestResult # Ensure Labarato
 from radiology.models import Ultrasound, UltrasoundRequest # Ensure Ultrasound is imported
 from django.db import transaction
 import json
+from django.conf import settings
+from django.utils import timezone
+from django.core.files.base import ContentFile
+from reportlab.platypus import Paragraph, Table, TableStyle, SimpleDocTemplate, Spacer, PageBreak
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from io import BytesIO
+from django.http import HttpResponse
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.lib.units import inch
+from reportlab.platypus import Image as ReportLabImage # Renamed to avoid conflict
+import os # For path joining, if using local images
+import base64
 
 
 logger = logging.getLogger(__name__)
@@ -477,61 +493,232 @@ def drug_issue(request):
         
 # In patients/views.py
 
-def patient_discharge(request, id):
-    patient = get_object_or_404(Patient_register, id=id)
+@login_required
+def discharge_patient(request, patient_id):
+    patient = get_object_or_404(Patient_register, id=patient_id)
 
     if request.method == 'POST':
-        # Check for outstanding bills before discharging
-        from .models import Billing
-        pending_bills = Billing.objects.filter(patient=patient, is_paid=False).order_by('-created_at')
-        
-        # Calculate the total due amount from all pending bills
-        outstanding_balance = sum(b.due_amount for b in pending_bills)
+        discharge_date_str = request.POST.get('discharge_date')
+        discharge_notes = request.POST.get('discharge_notes')
+        condition_at_discharge = request.POST.get('condition_at_discharge')
+        follow_up_instructions = request.POST.get('follow_up_instructions')
+        medications_at_discharge = request.POST.get('medications_at_discharge')
 
-        if outstanding_balance > 0:
-            # If there's an outstanding balance, inform the user it will be carried over
-            messages.warning(
-                request, 
-                f"Patient has an outstanding balance of KSH {outstanding_balance:.2f}. "
-                "This amount will be carried forward to their next admission."
-            )
-        else:
-            # All bills are paid
-            messages.success(request, "Patient's bill is fully paid.")
+        # Convert date string to date object
+        try:
+            discharge_date = datetime.strptime(discharge_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            messages.error(request, "Invalid discharge date format.")
+            return render(request, 'patients/discharge.html', {'patient': patient})
 
-        # Update the patient's discharge status regardless of bill status
+        # Update patient status and discharge summary details
         patient.is_discharged = True
-        patient.discharge_date = request.POST.get('discharge_date')
-        patient.save()
-        messages.success(request, "Patient successfully discharged.")
-        return redirect(pat_view, id=id)
+        patient.discharge_date = discharge_date
+        patient.status = 'Discharged'
+        patient.discharge_doctor = request.user # Set the discharging doctor to the logged-in user
+        patient.discharge_notes = discharge_notes
+        patient.condition_at_discharge = condition_at_discharge
+        patient.follow_up_instructions = follow_up_instructions
+        patient.medications_at_discharge = medications_at_discharge
 
-    # For GET request, render the discharge form
+        patient.save()
+
+        messages.success(request, f'Patient {patient.name} has been successfully discharged and summary recorded.')
+        # Redirect to the PDF generation view
+        return redirect('generate_discharge_summary_pdf', patient_id=patient.id)
+
     return render(request, 'patients/discharge.html', {'patient': patient})
 
 
-from django.contrib.admin.views.decorators import staff_member_required
-from .models import Billing, PaymentHistory, Patient_register
-from django.views.decorators.http import require_http_methods
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
-from django.core.mail import mail_admins
-from django.conf import settings
-from django.contrib import messages
-from django.urls import reverse
-from .models import PatientHistory, Appointment
-from drugs.models import DrugIssue, Drug
-from django.contrib.auth.models import User
-from labaratory.models import LabaratoryTestResult, LabaratoryTest
-from radiology.models import Ultrasound
-from django.utils import timezone
-from datetime import datetime, timedelta
-from decimal import Decimal
-import logging
-import json
-from django.db import transaction
+# Helper function to get or create a ParagraphStyle
+def get_or_create_style(styles, name, **kwargs):
+    if name not in styles:
+        styles.add(ParagraphStyle(name=name, **kwargs))
+    return styles[name]
 
-logger = logging.getLogger(__name__)
+@login_required
+def generate_discharge_summary_pdf(request, patient_id):
+    patient = get_object_or_404(Patient_register, id=patient_id)
+    discharge_date = patient.discharge_date if patient.discharge_date else timezone.now().date()
+    patient_history = PatientHistory.objects.filter(patient=patient).order_by('date')
+    lab_results = LabaratoryTestResult.objects.filter(patient=patient).order_by('test_date')
+    issued_drugs = DrugIssue.objects.filter(patient=patient).order_by('issue_date')
+    patient_bill = Billing.objects.filter(patient=patient).first()
+    ultrasound_results = Ultrasound.objects.filter(patient=patient).order_by('date')
+
+
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A5,
+                            rightMargin=1.5*cm, leftMargin=1.5*cm,
+                            topMargin=1.5*cm, bottomMargin=1.5*cm)
+    styles = getSampleStyleSheet()
+
+    # Define custom styles or get existing ones
+    h1_style = get_or_create_style(styles, 'h1', fontSize=14, leading=16, alignment=TA_CENTER, fontName='Helvetica-Bold')
+    h2_style = get_or_create_style(styles, 'h2', fontSize=12, leading=14, alignment=TA_LEFT, fontName='Helvetica-Bold')
+    body_style = get_or_create_style(styles, 'BodyText', fontSize=10, leading=12, alignment=TA_LEFT, fontName='Helvetica')
+    right_align_style = get_or_create_style(styles, 'RightAlign', fontSize=10, leading=12, alignment=TA_RIGHT, fontName='Helvetica')
+    center_align_style = get_or_create_style(styles, 'CenterAlign', fontSize=10, leading=12, alignment=TA_CENTER, fontName='Helvetica')
+    table_header_style = get_or_create_style(styles, 'TableHeader', fontSize=10, leading=12, alignment=TA_CENTER, fontName='Helvetica-Bold',
+                                           backColor=colors.lightgrey)
+
+    elements = []
+
+    # Hospital Header
+    elements.append(Paragraph(settings.HOSPITAL_NAME, h1_style))
+    elements.append(Paragraph("Discharge Summary", h1_style))
+    elements.append(Spacer(1, 0.5 * cm))
+
+    # Patient Information
+    elements.append(Paragraph("<b>Patient Information:</b>", h2_style))
+    elements.append(Paragraph(f"<b>Name:</b> {patient.name}", body_style))
+    elements.append(Paragraph(f"<b>Age:</b> {patient.age}", body_style))
+    elements.append(Paragraph(f"<b>Sex:</b> {patient.sex}", body_style))
+    elements.append(Paragraph(f"<b>Admission Date:</b> {patient.adm_date.strftime('%Y-%m-%d')}", body_style))
+    elements.append(Paragraph(f"<b>Discharge Date:</b> {discharge_date.strftime('%Y-%m-%d')}", body_style))
+    elements.append(Paragraph(f"<b>Status at Discharge:</b> {patient.status}", body_style))
+    elements.append(Spacer(1, 0.5 * cm))
+
+    # Patient History
+    elements.append(Paragraph("<b>Patient History:</b>", h2_style))
+    if patient_history:
+        history_data = [['Date', 'Signs', 'Symptoms', 'Temperature', 'Diagnosis']]
+        for entry in patient_history:
+            history_data.append([
+                entry.date.strftime('%Y-%m-%d'),
+                entry.signs,
+                entry.symptoms,
+                str(entry.temperature),
+                entry.diagnosis
+            ])
+        history_table = Table(history_data, colWidths=[1.8*cm, 2.5*cm, 2.5*cm, 2*cm, 3.5*cm])
+        history_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+            ('FONTSIZE', (0, 0), (-1, -1), 8), # Smaller font for table content
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ]))
+        elements.append(history_table)
+    else:
+        elements.append(Paragraph("No patient history recorded.", body_style))
+    elements.append(Spacer(1, 0.5 * cm))
+
+    # Lab Results
+    elements.append(Paragraph("<b>Laboratory Results:</b>", h2_style))
+    if lab_results:
+        lab_data = [['Test Name', 'Result', 'Date', 'Status']]
+        for result in lab_results:
+            lab_data.append([
+                result.labaratory_test.test_name if result.labaratory_test else 'N/A',
+                result.test_result,
+                result.test_date.strftime('%Y-%m-%d'),
+                result.status
+            ])
+        lab_table = Table(lab_data, colWidths=[3*cm, 4*cm, 2*cm, 2*cm])
+        lab_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+            ('FONTSIZE', (0, 0), (-1, -1), 8),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ]))
+        elements.append(lab_table)
+    else:
+        elements.append(Paragraph("No laboratory results found.", body_style))
+    elements.append(Spacer(1, 0.5 * cm))
+
+    # Issued Drugs
+    elements.append(Paragraph("<b>Issued Medications:</b>", h2_style))
+    if issued_drugs:
+        drug_data = [['Drug Name', 'Quantity', 'Issue Date']]
+        for issue in issued_drugs:
+            drug_data.append([
+                issue.drug.name,
+                str(issue.quantity_issued),
+                issue.issue_date.strftime('%Y-%m-%d')
+            ])
+        drug_table = Table(drug_data, colWidths=[4*cm, 2*cm, 3*cm])
+        drug_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+            ('FONTSIZE', (0, 0), (-1, -1), 8),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ]))
+        elements.append(drug_table)
+    else:
+        elements.append(Paragraph("No medications issued.", body_style))
+    elements.append(Spacer(1, 0.5 * cm))
+
+    # Ultrasound Results
+    elements.append(Paragraph("<b>Ultrasound Results:</b>", h2_style))
+    if ultrasound_results:
+        us_data = [['Type', 'Findings', 'Date']]
+        for us in ultrasound_results:
+            us_data.append([
+                us.ultrasound_type,
+                us.findings if us.findings else 'N/A',
+                us.date.strftime('%Y-%m-%d')
+            ])
+        us_table = Table(us_data, colWidths=[3*cm, 5*cm, 2*cm])
+        us_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+            ('FONTSIZE', (0, 0), (-1, -1), 8),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ]))
+        elements.append(us_table)
+    else:
+        elements.append(Paragraph("No ultrasound results found.", body_style))
+    elements.append(Spacer(1, 0.5 * cm))
+
+    # Billing Information
+    elements.append(Paragraph("<b>Billing Summary:</b>", h2_style))
+    if patient_bill:
+        elements.append(Paragraph(f"<b>Total Amount:</b> Ksh {patient_bill.total_amount}", body_style))
+        elements.append(Paragraph(f"<b>Amount Paid:</b> Ksh {patient_bill.paid_amount}", body_style))
+        elements.append(Paragraph(f"<b>Due Amount:</b> Ksh {patient_bill.due_amount}", body_style))
+        elements.append(Paragraph(f"<b>Bill Status:</b> {patient_bill.status}", body_style))
+
+        if patient_bill.details:
+            elements.append(Paragraph("<b>Detailed Charges:</b>", body_style))
+            for key, value in patient_bill.details.items():
+                # Format the key for display (e.g., "medication_charge" -> "Medication Charge")
+                display_key = key.replace('_', ' ').title()
+                elements.append(Paragraph(f"  <b>{display_key}:</b> Ksh {value}", body_style))
+    else:
+        elements.append(Paragraph("No billing information found.", body_style))
+    elements.append(Spacer(1, 1 * cm))
+
+    # Footer
+    elements.append(Paragraph(f"<i>Summary generated by {request.user.username} on {timezone.now().strftime('%Y-%m-%d %H:%M')}</i>", center_align_style))
+
+    try:
+        doc.build(elements)
+        buffer.seek(0)
+        return HttpResponse(buffer, content_type='application/pdf')
+    except Exception as e:
+        logger.error(f"Error generating PDF for patient {patient_id}: {e}")
+        messages.error(request, f"Error generating PDF: {e}")
+        return redirect('patient_detail', patient_id=patient_id)
 
 
 @login_required
