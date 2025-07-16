@@ -2,82 +2,240 @@
 {% block content %}
 <h2>Pharmacy Dashboard</h2>
 
-<h3>Stocked Drugs</h3>
-<table border="1">
-    <tr><th>Name</th><th>Stock</th><th>Expiry</th><th>Price</th></tr>
-    {% for drug in drugs %}
-    <tr>
-        <td>{{ drug.name }}</td>
-        <td>{{ drug.quantity }}</td>
-        <td>{{ drug.expiry_date }}</td>
-        <td>{{ drug.price }}</td>
-    </tr>
-    {% endfor %}
-</table>
+{# Stocked Drugs Section #}
+<div class="card mb-3">
+    <div class="card-header" id="headingStockedDrugs">
+        <h3 class="mb-0">
+            <button class="btn btn-link text-decoration-none" type="button" data-bs-toggle="collapse" data-bs-target="#collapseStockedDrugs" aria-expanded="true" aria-controls="collapseStockedDrugs">
+                Stocked Drugs
+            </button>
+        </h3>
+    </div>
+    <div id="collapseStockedDrugs" class="collapse show" aria-labelledby="headingStockedDrugs">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Stock</th>
+                            <th>Expiry</th>
+                            <th>Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for drug in drugs %}
+                        <tr>
+                            <td>{{ drug.name }}</td>
+                            <td>{{ drug.quantity }}</td>
+                            <td>{{ drug.expiry_date }}</td>
+                            <td>{{ drug.price }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 
-<h3>Pending Prescriptions (Not Yet Given)</h3>
-<table border="1">
-    <tr><th>Patient</th><th>Drug</th><th>Qty</th><th>Date</th><th>Action</th></tr>
-    {% for issue in pending_issues %}
-    <tr>
-        <td>{{ issue.patient.name }}</td>
-        <td>{{ issue.drug.name }}</td>
-        <td>{{ issue.quantity_issued }}</td>
-        <td>{{ issue.issue_date }}</td>
-        <td>
-            <form method="post" style="display:inline;">{% csrf_token %}
-                <input type="hidden" name="action" value="mark_given">
-                <input type="hidden" name="issue_id" value="{{ issue.id }}">
-                <button type="submit">Mark as Given</button>
-            </form>
-        </td>
-    </tr>
-    {% endfor %}
-</table>
-
-<h3>Issued Drugs History</h3>
-<table border="1">
-    <tr><th>Patient</th><th>Drug</th><th>Qty</th><th>Date</th><th>Action</th></tr>
-    {% for issue in issued_drugs %}
-    <tr>
-        <td>{{ issue.patient.name }}</td>
-        <td>{{ issue.drug.name }}</td>
-        <td>{{ issue.quantity_issued }}</td>
-        <td>{{ issue.issue_date }}</td>
-        <td>
-            <form method="post" style="display:inline;">{% csrf_token %}
-                <input type="hidden" name="action" value="mark_not_given">
-                <input type="hidden" name="issue_id" value="{{ issue.id }}">
-                <button type="submit">Mark as Not Given</button>
-            </form>
-        </td>
-    </tr>
-    {% endfor %}
-</table>
-
-<h3>Outstanding Medication Bills</h3>
-<table border="1">
-    <tr><th>Patient</th><th>Total Amount</th><th>Status</th><th>Action</th></tr>
-    {% for bill in bills %}
-    <tr>
-        <td>{{ bill.patient.name }}</td>
-        <td>{{ bill.total_amount }}</td>
-        <td>{{ bill.status }}</td>
-        <td>
-            {% if bill.status != 'paid' %}
-            <form method="post" style="display:inline;">{% csrf_token %}
-                <input type="hidden" name="action" value="mark_bill_paid">
-                <input type="hidden" name="bill_id" value="{{ bill.id }}">
-                <button type="submit">Mark as Paid</button>
-            </form>
+{# Unfulfilled Prescriptions Section #}
+<div class="card mb-3">
+    <div class="card-header" id="headingUnfulfilledPrescriptions">
+        <h3 class="mb-0">
+            <button class="btn btn-link text-decoration-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseUnfulfilledPrescriptions" aria-expanded="false" aria-controls="collapseUnfulfilledPrescriptions">
+                <i class="fas fa-file-prescription"></i> Unfulfilled Prescriptions
+            </button>
+        </h3>
+    </div>
+    <div id="collapseUnfulfilledPrescriptions" class="collapse" aria-labelledby="headingUnfulfilledPrescriptions">
+        <div class="card-body">
+            {% if unfulfilled_prescriptions %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Patient</th>
+                            <th>Prescribed By</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for prescription in unfulfilled_prescriptions %}
+                        <tr>
+                            <td>{{ prescription.prescription_date|date:"Y-m-d H:i" }}</td>
+                            <td>{{ prescription.patient.name }}</td>
+                            <td>{{ prescription.prescribed_by.username|default:"N/A" }}</td>
+                            <td><span class="badge bg-warning text-dark">Pending Fulfillment</span></td>
+                            <td>
+                                <a href="{% url 'prescription_detail' prescription.id %}" class="btn btn-sm btn-info">View Details</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p>No unfulfilled prescriptions at the moment.</p>
             {% endif %}
-        </td>
-    </tr>
-    {% endfor %}
-</table>
+        </div>
+    </div>
+</div>
 
-<h3>Over the Counter (OTC) Sales</h3>
-<a href="{% url 'otc_sale' %}">New OTC Sale</a> |
-<a href="{% url 'otc_sales_list' %}">View OTC Sales History</a>
+{# Pending Prescriptions (Not Yet Given) Section #}
+<div class="card mb-3">
+    <div class="card-header" id="headingPendingIssues">
+        <h3 class="mb-0">
+            <button class="btn btn-link text-decoration-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePendingIssues" aria-expanded="false" aria-controls="collapsePendingIssues">
+                Pending Prescriptions (Not Yet Given)
+            </button>
+        </h3>
+    </div>
+    <div id="collapsePendingIssues" class="collapse" aria-labelledby="headingPendingIssues">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Patient</th>
+                            <th>Drug</th>
+                            <th>Qty</th>
+                            <th>Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for issue in pending_issues %}
+                        <tr>
+                            <td>{{ issue.patient.name }}</td>
+                            <td>{{ issue.drug.name }}</td>
+                            <td>{{ issue.quantity_issued }}</td>
+                            <td>{{ issue.issue_date }}</td>
+                            <td>
+                                <form method="post" style="display:inline;">{% csrf_token %}
+                                    <input type="hidden" name="action" value="mark_given">
+                                    <input type="hidden" name="issue_id" value="{{ issue.id }}">
+                                    <button type="submit" class="btn btn-sm btn-success">Mark as Given</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Issued Drugs History Section #}
+<div class="card mb-3">
+    <div class="card-header" id="headingIssuedDrugs">
+        <h3 class="mb-0">
+            <button class="btn btn-link text-decoration-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseIssuedDrugs" aria-expanded="false" aria-controls="collapseIssuedDrugs">
+                Issued Drugs History
+            </button>
+        </h3>
+    </div>
+    <div id="collapseIssuedDrugs" class="collapse" aria-labelledby="headingIssuedDrugs">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Patient</th>
+                            <th>Drug</th>
+                            <th>Qty</th>
+                            <th>Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for issue in issued_drugs %}
+                        <tr>
+                            <td>{{ issue.patient.name }}</td>
+                            <td>{{ issue.drug.name }}</td>
+                            <td>{{ issue.quantity_issued }}</td>
+                            <td>{{ issue.issue_date }}</td>
+                            <td>
+                                <form method="post" style="display:inline;">{% csrf_token %}
+                                    <input type="hidden" name="action" value="mark_not_given">
+                                    <input type="hidden" name="issue_id" value="{{ issue.id }}">
+                                    <button type="submit" class="btn btn-sm btn-warning">Mark as Not Given</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Outstanding Medication Bills Section #}
+<div class="card mb-3">
+    <div class="card-header" id="headingOutstandingBills">
+        <h3 class="mb-0">
+            <button class="btn btn-link text-decoration-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOutstandingBills" aria-expanded="false" aria-controls="collapseOutstandingBills">
+                Outstanding Medication Bills
+            </button>
+        </h3>
+    </div>
+    <div id="collapseOutstandingBills" class="collapse" aria-labelledby="headingOutstandingBills">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Patient</th>
+                            <th>Total Amount</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bill in bills %}
+                        <tr>
+                            <td>{{ bill.patient.name }}</td>
+                            <td>{{ bill.total_amount }}</td>
+                            <td>{{ bill.status }}</td>
+                            <td>
+                                {% if bill.status != 'paid' %}
+                                <form method="post" style="display:inline;">{% csrf_token %}
+                                    <input type="hidden" name="action" value="mark_bill_paid">
+                                    <input type="hidden" name="bill_id" value="{{ bill.id }}">
+                                    <button type="submit" class="btn btn-sm btn-primary">Mark as Paid</button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Over the Counter (OTC) Sales Section #}
+<div class="card mb-3">
+    <div class="card-header" id="headingOTCSales">
+        <h3 class="mb-0">
+            <button class="btn btn-link text-decoration-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOTCSales" aria-expanded="false" aria-controls="collapseOTCSales">
+                Over the Counter (OTC) Sales
+            </button>
+        </h3>
+    </div>
+    <div id="collapseOTCSales" class="collapse" aria-labelledby="headingOTCSales">
+        <div class="card-body">
+            <p>
+                <a href="{% url 'otc_sale' %}" class="btn btn-secondary me-2">New OTC Sale</a>
+                <a href="{% url 'otc_sales_list' %}" class="btn btn-secondary">View OTC Sales History</a>
+            </p>
+        </div>
+    </div>
+</div>
 
 {% endblock %}

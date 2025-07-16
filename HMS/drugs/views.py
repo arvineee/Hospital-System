@@ -7,6 +7,13 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from decimal import Decimal
 import logging
+from .models import Drug, DrugIssue, OTCSale, Prescription, PrescriptionItem, DrugSupplier, DrugOrder, DrugOrderItem,StockAdjustment
+from patients.models import Patient_register, Billing 
+from datetime import timedelta
+from django.db.models import F
+from django.http import JsonResponse
+from patients.views import get_active_bill_for_patient
+from django.db.models import Sum
 
 # OTC Sale View (with search)
 @login_required
@@ -62,34 +69,40 @@ from patients.views import get_active_bill_for_patient
 def all_drugs(request):
     drugs = Drug.objects.all()
     return render(request, 'drugs/home.html', {'drugs': drugs})
-def add_drug(request): 
+@login_required
+def add_drug(request):
     if request.method == 'POST':
         name = request.POST.get('name')
-        quantity = request.POST.get('quantity')
+        quantity = int(request.POST.get('quantity'))
         expiry_date = request.POST.get('expiry_date')
-        price = request.POST.get('price')
+        price = Decimal(request.POST.get('price'))
+        reorder_level = int(request.POST.get('reorder_level', 10))
+        unit_of_measure = request.POST.get('unit_of_measure', 'tablets')
 
-        # Validate required fields
+        # Basic validation
         if not all([name, quantity, expiry_date, price]):
-            messages.error(request,"All fields are required.")
+            messages.error(request, "Please fill in all required fields.")
             return render(request, 'drugs/add_drug.html')
 
-        # Check for duplicate drug
-        if Drug.objects.filter(name=name).exists():
-            messages.error(request,"Drug with this name already exists.")
-            return render(request, 'drugs/add_drug.html')
+        try:
+            Drug.objects.create(
+                name=name,
+                quantity=quantity,
+                expiry_date=expiry_date,
+                price=price,
+                reorder_level=reorder_level,
+                unit_of_measure=unit_of_measure
+            )
+            messages.success(request, f"Drug '{name}' added successfully.")
+            return redirect('drug_list_and_alerts')
+        except Exception as e:
+            messages.error(request, f"Error adding drug: {e}")
 
-        # Create and save the new drug
-        new_drug = Drug(name=name, quantity=quantity, expiry_date=expiry_date, price=price)
-        new_drug.save()
+    return render(request, 'drugs/add_drug.html')
 
-        # Redirect or return success response
-        messages.success(request, "Drug successfully added.")
-        return redirect(all_drugs)  # Replace 'success_page' with your actual success URL
 
-        # If GET request, render the registration form
-    return render(request, 'drugs/add_drug.html')  
 
+@login_required
 def drug_update(request, id):
     drug = Drug.objects.get(id=id)
     if request.method == 'POST':
@@ -234,60 +247,68 @@ def drug_issue(request, patient_id):
     return render(request, 'drugs/drug_issue_create.html', context)
 
 
-def stock_out_warning(request):
-    # Get all drugs that are out of stock
-    out_of_stock_drugs = Drug.objects.filter(quantity=0)
+@login_required
+def get_stock_warnings(request):
+    """
+    Returns a JSON response with a list of drugs that are out of stock
+    or below their reorder level.
+    """
+    low_stock_drugs = list(Drug.objects.filter(quantity__lte=F('reorder_level')).values('name', 'quantity', 'reorder_level')) # cite: uploaded:models.py
     
-    # Check if any drugs are out of stock
-    if out_of_stock_drugs.exists():
-        for drug in out_of_stock_drugs:
-            # Send a warning message for each out of stock drug
-            messages.warning(request, f"{drug.name} is out of stock.")
+    out_of_stock_drugs = list(Drug.objects.filter(quantity=0).values('name')) # cite: uploaded:models.py
 
-    
-    return render(request, 'drugs/stock_out_warning.html', {'out_of_stock_drugs': out_of_stock_drugs})
+    expiring_soon_drugs_objects = Drug.objects.filter(expiry_date__lte=timezone.now().date() + timedelta(days=90)).exclude(quantity=0) # cite: uploaded:models.py
+    expiring_soon_drugs = [{'name': drug.name, 'expiry_date': drug.expiry_date.strftime('%Y-%m-%d')} for drug in expiring_soon_drugs_objects] # cite: uploaded:models.py
+
+    warnings = {
+        'low_stock': low_stock_drugs,
+        'out_of_stock': out_of_stock_drugs,
+        'expiring_soon': expiring_soon_drugs,
+    }
+    return JsonResponse(warnings)
 
 def pharmacy_dashboard(request):
     """
-    Modern pharmacy dashboard: shows all drugs, prescribed drugs, issued drugs, and allows marking as given/not given.
-    Integrates with billing to update charges and payment status.
+    Modern pharmacy dashboard: shows all drugs, prescribed drugs, issued drugs,
+    and allows marking as given/not given. Integrates with billing to update
+    charges and payment status.
     """
-   
     # All drugs in stock
-    drugs = Drug.objects.all()
+    drugs = Drug.objects.all() # cite: uploaded:views.py
+
+    # All prescriptions that are not yet fulfilled
+    unfulfilled_prescriptions = Prescription.objects.filter(is_fulfilled=False).order_by('prescription_date') # cite: uploaded:views.py
+
     # All prescriptions (DrugIssue) that are not yet marked as given
-    pending_issues = DrugIssue.objects.filter(given=False)
+    pending_issues = DrugIssue.objects.filter(given=False) # cite: uploaded:views.py
+
     # All issued drugs (history)
-    issued_drugs = DrugIssue.objects.filter(given=True)
+    issued_drugs = DrugIssue.objects.filter(given=True) # cite: uploaded:views.py
 
     # OTC sales summary for today
-    from datetime import datetime, timedelta
-    from django.utils import timezone
     today = timezone.localdate()
-    otc_sales_today = OTCSale.objects.filter(sale_datetime__date=today)
-    otc_sales_today_count = otc_sales_today.count()
-    from django.db.models import Sum
-    otc_sales_today_total = otc_sales_today.aggregate(Sum('total_price'))['total_price__sum'] or 0
+    otc_sales_today = OTCSale.objects.filter(sale_datetime__date=today) # cite: uploaded:views.py
+    otc_sales_today_count = otc_sales_today.count() # cite: uploaded:views.py
+    otc_sales_today_total = otc_sales_today.aggregate(Sum('total_price'))['total_price__sum'] or 0 # cite: uploaded:views.py
 
     # Handle marking as given or not given
     if request.method == 'POST':
         action = request.POST.get('action')
         issue_id = request.POST.get('issue_id')
+
         if action == 'mark_given' and issue_id:
             try:
-                issue = DrugIssue.objects.get(id=issue_id)
-                issue.given = True
-                issue.save()
-                # Remove from bill charges if not given
+                issue = DrugIssue.objects.get(id=issue_id) # cite: uploaded:views.py
+                issue.given = True # cite: uploaded:views.py
+                issue.save() # cite: uploaded:views.py
+
                 # Find the bill for this patient
-                bill = Billing.objects.filter(patient=issue.patient).last()
+                bill = Billing.objects.filter(patient=issue.patient).last() # cite: uploaded:views.py
                 if bill:
-                    # Remove this drug's charge from bill.details and recalculate
                     details = bill.details or {}
                     med_charge = details.get('medication_charge', 0)
                     med_charge -= float(issue.drug.price) * int(issue.quantity_issued)
                     details['medication_charge'] = max(med_charge, 0)
-                    # Recalculate total
                     details['total'] = sum([
                         float(details.get('consultation_charge', 0)),
                         float(details.get('room_charge', 0)),
@@ -298,16 +319,17 @@ def pharmacy_dashboard(request):
                     bill.details = details
                     bill.total_amount = details['total']
                     bill.save()
-                messages.success(request, 'Drug marked as given and bill updated.')
+                messages.success(request, 'Drug marked as given and bill updated.') # cite: uploaded:views.py
             except DrugIssue.DoesNotExist:
-                messages.error(request, 'Drug issue not found.')
+                messages.error(request, 'Drug issue not found.') # cite: uploaded:views.py
         elif action == 'mark_not_given' and issue_id:
             try:
-                issue = DrugIssue.objects.get(id=issue_id)
-                issue.given = False
-                issue.save()
+                issue = DrugIssue.objects.get(id=issue_id) # cite: uploaded:views.py
+                issue.given = False # cite: uploaded:views.py
+                issue.save() # cite: uploaded:views.py
+                
                 # Add back to bill charges
-                bill = Billing.objects.filter(patient=issue.patient).last()
+                bill = Billing.objects.filter(patient=issue.patient).last() # cite: uploaded:views.py
                 if bill:
                     details = bill.details or {}
                     med_charge = details.get('medication_charge', 0)
@@ -323,29 +345,204 @@ def pharmacy_dashboard(request):
                     bill.details = details
                     bill.total_amount = details['total']
                     bill.save()
-                messages.success(request, 'Drug marked as not given and bill updated.')
+                messages.success(request, 'Drug marked as not given and bill updated.') # cite: uploaded:views.py
             except DrugIssue.DoesNotExist:
-                messages.error(request, 'Drug issue not found.')
-        elif action == 'mark_bill_paid':
-            bill_id = request.POST.get('bill_id')
-            try:
-                bill = Billing.objects.get(id=bill_id)
-                bill.is_paid = True
-                bill.status = 'paid'
-                bill.save()
-                messages.success(request, 'Bill marked as paid.')
-            except Billing.DoesNotExist:
-                messages.error(request, 'Bill not found.')
-        return redirect('pharmacy_dashboard')
+                messages.error(request, 'Drug issue not found.') # cite: uploaded:views.py
 
-    # For dashboard display: show all bills with outstanding medication charges
-    bills = Billing.objects.filter(details__medication_charge__gt=0)
+    context = {
+        'drugs': drugs, # cite: uploaded:views.py
+        'unfulfilled_prescriptions': unfulfilled_prescriptions, # cite: uploaded:views.py
+        'pending_issues': pending_issues, # cite: uploaded:views.py
+        'issued_drugs': issued_drugs, # cite: uploaded:views.py
+        'otc_sales_today_count': otc_sales_today_count, # cite: uploaded:views.py
+        'otc_sales_today_total': otc_sales_today_total, # cite: uploaded:views.py
+        # Stock warnings will be fetched asynchronously
+    }
+    return render(request, 'drugs/pharmacy_dashboard.html', context) # cite: uploaded:pharmacy_dashboard.html
+
+@login_required
+def drug_list_and_alerts(request):
+    search_query = request.GET.get('search', '').strip()
+    drugs = Drug.objects.all().order_by('name')
+
+    if search_query:
+        drugs = drugs.filter(name__icontains=search_query)
+
+    low_stock_drugs = [drug for drug in drugs if drug.is_low_stock]
+    expiring_drugs = [drug for drug in drugs if drug.is_expiring_soon] # within 90 days
+
     context = {
         'drugs': drugs,
-        'pending_issues': pending_issues,
-        'issued_drugs': issued_drugs,
-        'bills': bills,
-        'otc_sales_today_count': otc_sales_today_count,
-        'otc_sales_today_total': otc_sales_today_total,
+        'low_stock_drugs': low_stock_drugs,
+        'expiring_drugs': expiring_drugs,
+        'search_query': search_query,
     }
-    return render(request, 'drugs/pharmacy_dashboard.html', context)
+    return render(request, 'drugs/drug_list_alerts.html', context)
+
+@login_required
+def create_prescription(request, patient_id):
+    """
+    Allows a doctor to create a new e-prescription for a patient.
+    """
+    patient = get_object_or_404(Patient_register, id=patient_id)
+    drugs = Drug.objects.filter(quantity__gt=0).order_by('name')
+    
+    if request.method == 'POST':
+        # This is a simplified version. For a real-world scenario, you'd use Django Forms/Formsets.
+        drug_ids = request.POST.getlist('drug')
+        dosages = request.POST.getlist('dosage')
+        frequencies = request.POST.getlist('frequency')
+        durations = request.POST.getlist('duration')
+        notes = request.POST.get('notes')
+
+        if not drug_ids:
+            messages.error(request, "Please add at least one drug to the prescription.")
+            return render(request, 'drugs/create_prescription.html', {'patient': patient, 'drugs': drugs})
+
+        try:
+            with transaction.atomic():
+                prescription = Prescription.objects.create(
+                    patient=patient,
+                    prescribed_by=request.user,
+                    notes=notes
+                )
+                
+                for i in range(len(drug_ids)):
+                    drug = Drug.objects.get(id=drug_ids[i])
+                    PrescriptionItem.objects.create(
+                        prescription=prescription,
+                        drug=drug,
+                        dosage=dosages[i],
+                        frequency=frequencies[i],
+                        duration=durations[i]
+                    )
+                
+            messages.success(request, f"Prescription created successfully for {patient.name}.")
+            return redirect('patient_prescriptions', patient_id=patient.id)
+        except Exception as e:
+            messages.error(request, f"An error occurred: {e}")
+
+    context = {
+        'patient': patient,
+        'drugs': drugs
+    }
+    return render(request, 'drugs/create_prescription.html', context)
+
+@login_required
+def patient_prescriptions(request, patient_id):
+    """
+    Lists all prescriptions for a specific patient.
+    """
+    patient = get_object_or_404(Patient_register, id=patient_id)
+    prescriptions = Prescription.objects.filter(patient=patient).order_by('-prescription_date')
+    context = {
+        'patient': patient,
+        'prescriptions': prescriptions
+    }
+    return render(request, 'drugs/patient_prescriptions.html', context)
+
+@login_required
+def prescription_detail(request, prescription_id):
+    """
+    Displays the details of a single prescription.
+    """
+    prescription = get_object_or_404(Prescription.objects.prefetch_related('items__drug'), id=prescription_id)
+    context = {
+        'prescription': prescription
+    }
+    return render(request, 'drugs/prescription_detail.html', context)
+
+# SUPPLIER MANAGEMENT
+@login_required
+def supplier_list(request):
+    """
+    Displays a list of all drug suppliers.
+    """
+    suppliers = DrugSupplier.objects.all()
+    return render(request, 'drugs/supplier_list.html', {'suppliers': suppliers})
+
+@login_required
+def add_supplier(request):
+    """
+    Handles the creation of a new supplier.
+    """
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        contact_person = request.POST.get('contact_person')
+        phone = request.POST.get('phone')
+        email = request.POST.get('email')
+        address = request.POST.get('address')
+        
+        if not name:
+            messages.error(request, "Supplier name is required.")
+        else:
+            DrugSupplier.objects.create(
+                name=name,
+                contact_person=contact_person,
+                phone=phone,
+                email=email,
+                address=address
+            )
+            messages.success(request, f"Supplier '{name}' added successfully.")
+            return redirect('supplier_list')
+            
+    return render(request, 'drugs/add_supplier.html')
+
+# INVENTORY RECONCILIATION
+@login_required
+def inventory_reconciliation(request):
+    """
+    Provides a tool to perform and log stock adjustments.
+    """
+    drugs = Drug.objects.all().order_by('name')
+    if request.method == 'POST':
+        drug_id = request.POST.get('drug_id')
+        try:
+            physical_count = int(request.POST.get('physical_count'))
+            reason = request.POST.get('reason')
+            drug = Drug.objects.get(id=drug_id)
+            
+            if physical_count < 0:
+                messages.error(request, "Physical count cannot be negative.")
+            else:
+                initial_quantity = drug.quantity
+                
+                with transaction.atomic():
+                    # Create a log of the adjustment
+                    StockAdjustment.objects.create(
+                        drug=drug,
+                        user=request.user,
+                        initial_quantity=initial_quantity,
+                        new_quantity=physical_count,
+                        reason=reason
+                    )
+                    
+                    # Update the drug's quantity
+                    drug.quantity = physical_count
+                    drug.save()
+                
+                messages.success(request, f"Stock for {drug.name} has been reconciled.")
+                return redirect('inventory_reconciliation')
+
+        except (ValueError, TypeError):
+            messages.error(request, "Invalid physical count entered.")
+        except Drug.DoesNotExist:
+            messages.error(request, "Drug not found.")
+        
+    return render(request, 'drugs/inventory_reconciliation.html', {'drugs': drugs})
+
+
+# DRUG INTERACTION WARNINGS (Placeholder)
+# A full implementation requires an external API or a comprehensive internal database.
+# This is a conceptual placeholder.
+def check_drug_interactions(drug_list):
+    """
+    Conceptual function for checking drug interactions.
+    In a real application, this would call an external service.
+    """
+    # Dummy logic
+    warnings = []
+    drug_names = [drug.name.lower() for drug in drug_list]
+    if 'warfarin' in drug_names and 'aspirin' in drug_names:
+        warnings.append("High risk of bleeding: Warfarin and Aspirin should not be taken together without medical supervision.")
+    return warnings

@@ -14,212 +14,255 @@
         </div>
     </div>
 
-    <!-- Stock & OTC Overview Cards -->
-    <div class="row g-4 mb-4">
-        <div class="col-md-3">
-            <div class="card border-0 shadow h-100 gradient-card-green">
-                <div class="card-body text-center">
-                    <i class="fas fa-capsules fa-2x text-success mb-2"></i>
-                    <h6 class="card-title">Total Drugs in Stock</h6>
-                    <h2 class="fw-bold text-success mb-0">{{ drugs.count }}</h2>
-                </div>
+    {# Urgent Stock Alerts Section - Includes Stock Out Warning #}
+    <div class="card mb-4 shadow border-0">
+        <div class="card-header bg-danger text-white">
+            <h3><i class="fas fa-exclamation-triangle"></i> Urgent Stock Alerts</h3>
+        </div>
+        <div class="card-body">
+            <div id="stock-warnings">
+                <p>Loading stock warnings...</p>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card border-0 shadow h-100 gradient-card-yellow">
-                <div class="card-body text-center">
-                    <i class="fas fa-pills fa-2x text-warning mb-2"></i>
-                    <h6 class="card-title">Pending Prescriptions</h6>
-                    <h2 class="fw-bold text-warning mb-0">{{ pending_issues.count }}</h2>
-                </div>
-            </div>
+    </div>
+
+    {# Stock & OTC Overview Cards Section #}
+    <div class="card mb-4 shadow border-0">
+        <div class="card-header bg-primary text-white d-flex align-items-center" id="headingOverview">
+            <h4 class="mb-0 w-100">
+                <button class="btn btn-link text-white text-decoration-none d-flex justify-content-between align-items-center w-100" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOverview" aria-expanded="true" aria-controls="collapseOverview">
+                    <span class="fw-bold"><i class="fas fa-chart-pie me-2"></i>Stock & OTC Overview</span>
+                    <i class="fas fa-chevron-down ms-2"></i>
+                </button>
+            </h4>
         </div>
-        <div class="col-md-3">
-            <div class="card border-0 shadow h-100 gradient-card-blue">
-                <div class="card-body text-center">
-                    <i class="fas fa-history fa-2x text-info mb-2"></i>
-                    <h6 class="card-title">Issued Drugs (History)</h6>
-                    <h2 class="fw-bold text-info mb-0">{{ issued_drugs.count }}</h2>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card border-0 shadow h-100 gradient-card-otc">
-                <div class="card-body text-center">
-                    <i class="fas fa-cash-register fa-2x text-primary mb-2"></i>
-                    <h6 class="card-title">Today's OTC Sales</h6>
-                    <h2 class="fw-bold text-primary mb-3">{{ otc_sales_today_count|default:'0' }}</h2>
-                    <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#otcSalesAmountModal">
-                        <i class="fas fa-eye"></i> Show Amount
-                    </button>
+        <div id="collapseOverview" class="collapse show" aria-labelledby="headingOverview">
+            <div class="card-body">
+                <div class="row g-4">
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow h-100 gradient-card-green">
+                            <div class="card-body text-center">
+                                <i class="fas fa-capsules fa-2x text-success mb-2"></i>
+                                <h6 class="card-title">Total Drugs in Stock</h6>
+                                <h2 class="fw-bold text-success mb-0">{{ drugs.count }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow h-100 gradient-card-yellow">
+                            <div class="card-body text-center">
+                                <i class="fas fa-pills fa-2x text-warning mb-2"></i>
+                                <h6 class="card-title">Pending Prescriptions</h6>
+                                <h2 class="fw-bold text-warning mb-0">{{ pending_issues.count }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow h-100 gradient-card-blue">
+                            <div class="card-body text-center">
+                                <i class="fas fa-history fa-2x text-info mb-2"></i>
+                                <h6 class="card-title">Issued Drugs (History)</h6>
+                                <h2 class="fw-bold text-info mb-0">{{ issued_drugs.count }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow h-100 gradient-card-otc">
+                            <div class="card-body text-center">
+                                <i class="fas fa-cash-register fa-2x text-primary mb-2"></i>
+                                <h6 class="card-title">Today's OTC Sales</h6>
+                                <h2 class="fw-bold text-primary mb-3">{{ otc_sales_today_count|default:'0' }}</h2>
+                                <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#otcSalesAmountModal">
+                                    <i class="fas fa-eye"></i> Show Amount
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Pending Prescriptions Grouped by Patient -->
+    {# Pending Prescriptions Grouped by Patient Section #}
     <div class="card mb-4 shadow border-0">
-        <div class="card-header bg-gradient-warning text-dark d-flex align-items-center">
-            <i class="fas fa-user-clock me-2"></i>
-            <h4 class="mb-0">Pending Prescriptions (Grouped by Patient)</h4>
+        <div class="card-header bg-gradient-warning text-dark d-flex align-items-center" id="headingPendingPrescriptions">
+            <h4 class="mb-0 w-100">
+                <button class="btn btn-link text-dark text-decoration-none d-flex justify-content-between align-items-center w-100 collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePendingPrescriptions" aria-expanded="false" aria-controls="collapsePendingPrescriptions">
+                    <span class="fw-bold"><i class="fas fa-user-clock me-2"></i>Pending Prescriptions (Grouped by Patient)</span>
+                    <i class="fas fa-chevron-down ms-2"></i>
+                </button>
+            </h4>
         </div>
-        <div class="card-body table-responsive">
-            {% regroup pending_issues by patient as patient_groups %}
-            {% if patient_groups %}
-            <table class="table table-hover align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th>Patient</th>
-                        <th>Drugs</th>
-                        <th>Date Prescribed</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for group in patient_groups %}
-                    <tr>
-                        <td class="fw-bold text-primary">{{ group.grouper }}</td>
-                        <td>
-                            <ul class="list-unstyled mb-0">
+        <div id="collapsePendingPrescriptions" class="collapse" aria-labelledby="headingPendingPrescriptions">
+            <div class="card-body table-responsive">
+                {% regroup pending_issues by patient as patient_groups %}
+                {% if patient_groups %}
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Patient</th>
+                            <th>Drugs</th>
+                            <th>Date Prescribed</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for group in patient_groups %}
+                        <tr>
+                            <td class="fw-bold text-primary">{{ group.grouper }}</td>
+                            <td>
+                                <ul class="list-unstyled mb-0">
+                                    {% for issue in group.list %}
+                                    <li>
+                                        <span class="fw-semibold">{{ issue.drug.name }}</span> <span class="badge bg-secondary">x{{ issue.quantity_issued }}</span>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </td>
+                            <td>
+                                <ul class="list-unstyled mb-0">
+                                    {% for issue in group.list %}
+                                    <li>{{ issue.created_at|date:'Y-m-d H:i' }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </td>
+                            <td>
                                 {% for issue in group.list %}
-                                <li>
-                                    <span class="fw-semibold">{{ issue.drug.name }}</span> <span class="badge bg-secondary">x{{ issue.quantity_issued }}</span>
-                                </li>
+                                <form method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="mark_given">
+                                    <input type="hidden" name="issue_id" value="{{ issue.id }}">
+                                    <button type="submit" class="btn btn-success btn-sm mb-1"><i class="fas fa-check"></i> Mark as Given</button>
+                                </form>
+                                <form method="post" class="d-inline ms-1">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="mark_not_given">
+                                    <input type="hidden" name="issue_id" value="{{ issue.id }}">
+                                    <button type="submit" class="btn btn-danger btn-sm mb-1"><i class="fas fa-times"></i> Not Given</button>
+                                </form>
+                                <br>
                                 {% endfor %}
-                            </ul>
-                        </td>
-                        <td>
-                            <ul class="list-unstyled mb-0">
-                                {% for issue in group.list %}
-                                <li>{{ issue.created_at|date:'Y-m-d H:i' }}</li>
-                                {% endfor %}
-                            </ul>
-                        </td>
-                        <td>
-                            {% for issue in group.list %}
-                            <form method="post" class="d-inline">
-                                {% csrf_token %}
-                                <input type="hidden" name="action" value="mark_given">
-                                <input type="hidden" name="issue_id" value="{{ issue.id }}">
-                                <button type="submit" class="btn btn-success btn-sm mb-1"><i class="fas fa-check"></i> Mark as Given</button>
-                            </form>
-                            <form method="post" class="d-inline ms-1">
-                                {% csrf_token %}
-                                <input type="hidden" name="action" value="mark_not_given">
-                                <input type="hidden" name="issue_id" value="{{ issue.id }}">
-                                <button type="submit" class="btn btn-danger btn-sm mb-1"><i class="fas fa-times"></i> Not Given</button>
-                            </form>
-                            <br>
-                            {% endfor %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
-            <div class="text-center text-muted py-4">No pending prescriptions.</div>
-            {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="text-center text-muted py-4">No pending prescriptions.</div>
+                {% endif %}
+            </div>
         </div>
     </div>
 
-    <!-- Issued Drugs Table Grouped by Patient -->
+    {# Issued Drugs Table Grouped by Patient Section #}
     <div class="card mb-4 shadow border-0">
-        <div class="card-header bg-gradient-info text-white d-flex align-items-center">
-            <i class="fas fa-user-check me-2"></i>
-            <h4 class="mb-0">Issued Drugs (Grouped by Patient)</h4>
+        <div class="card-header bg-gradient-info text-dark d-flex align-items-center" id="headingIssuedDrugs">
+            <h4 class="mb-0 w-100">
+                <button class="btn btn-link text-dark text-decoration-none d-flex justify-content-between align-items-center w-100 collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseIssuedDrugs" aria-expanded="false" aria-controls="collapseIssuedDrugs">
+                    <span class="fw-bold"><i class="fas fa-user-check me-2"></i>Issued Drugs (Grouped by Patient)</span>
+                    <i class="fas fa-chevron-down ms-2"></i>
+                </button>
+            </h4>
         </div>
-        <div class="card-body table-responsive">
-            {% regroup issued_drugs by patient as issued_groups %}
-            {% if issued_groups %}
-            <table class="table table-hover align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th>Patient</th>
-                        <th>Drugs</th>
-                        <th>Date Issued</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for group in issued_groups %}
-                    <tr>
-                        <td class="fw-bold text-primary">{{ group.grouper }}</td>
-                        <td>
-                            <ul class="list-unstyled mb-0">
-                                {% for issue in group.list %}
-                                <li>
-                                    <span class="fw-semibold">{{ issue.drug.name }}</span> <span class="badge bg-secondary">x{{ issue.quantity_issued }}</span>
-                                </li>
-                                {% endfor %}
-                            </ul>
-                        </td>
-                        <td>
-                            <ul class="list-unstyled mb-0">
-                                {% for issue in group.list %}
-                                <li>{{ issue.created_at|date:'Y-m-d H:i' }}</li>
-                                {% endfor %}
-                            </ul>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
-            <div class="text-center text-muted py-4">No issued drugs yet.</div>
-            {% endif %}
+        <div id="collapseIssuedDrugs" class="collapse" aria-labelledby="headingIssuedDrugs">
+            <div class="card-body table-responsive">
+                {% regroup issued_drugs by patient as issued_groups %}
+                {% if issued_groups %}
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Patient</th>
+                            <th>Drugs</th>
+                            <th>Date Issued</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for group in issued_groups %}
+                        <tr>
+                            <td class="fw-bold text-primary">{{ group.grouper }}</td>
+                            <td>
+                                <ul class="list-unstyled mb-0">
+                                    {% for issue in group.list %}
+                                    <li>
+                                        <span class="fw-semibold">{{ issue.drug.name }}</span> <span class="badge bg-secondary">x{{ issue.quantity_issued }}</span>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </td>
+                            <td>
+                                <ul class="list-unstyled mb-0">
+                                    {% for issue in group.list %}
+                                    <li>{{ issue.created_at|date:'Y-m-d H:i' }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="text-center text-muted py-4">No issued drugs yet.</div>
+                {% endif %}
+            </div>
         </div>
     </div>
 
-    <!-- Outstanding Bills Table -->
+    {# Outstanding Bills Table Section #}
     <div class="card mb-4 shadow border-0">
-        <div class="card-header bg-gradient-dark text-white d-flex align-items-center">
-            <i class="fas fa-file-invoice-dollar me-2"></i>
-            <h4 class="mb-0">Outstanding Bills (Medication Charges)</h4>
+        <div class="card-header bg-gradient-dark text-dark d-flex align-items-center" id="headingOutstandingBills">
+            <h4 class="mb-0 w-100">
+                <button class="btn btn-link text-dark text-decoration-none d-flex justify-content-between align-items-center w-100 collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOutstandingBills" aria-expanded="false" aria-controls="collapseOutstandingBills">
+                    <span class="fw-bold"><i class="fas fa-file-invoice-dollar me-2"></i>Outstanding Bills (Medication Charges)</span>
+                    <i class="fas fa-chevron-down ms-2"></i>
+                </button>
+            </h4>
         </div>
-        <div class="card-body table-responsive">
-            <table class="table table-hover align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th>Patient</th>
-                        <th>Total Medication Charges (KSH)</th>
-                        <th>Total Bill (KSH)</th>
-                        <th>Status</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for bill in bills %}
-                    <tr>
-                        <td class="fw-bold text-primary">{{ bill.patient }}</td>
-                        <td>{{ bill.details.medication_charge|floatformat:2 }}</td>
-                        <td>{{ bill.total_amount|floatformat:2 }}</td>
-                        <td>
-                            {% if bill.is_paid %}
+        <div id="collapseOutstandingBills" class="collapse" aria-labelledby="headingOutstandingBills">
+            <div class="card-body table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Patient</th>
+                            <th>Total Medication Charges (KSH)</th>
+                            <th>Total Bill (KSH)</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bill in bills %}
+                        <tr>
+                            <td class="fw-bold text-primary">{{ bill.patient }}</td>
+                            <td>{{ bill.details.medication_charge|floatformat:2 }}</td>
+                            <td>{{ bill.total_amount|floatformat:2 }}</td>
+                            <td>
+                                {% if bill.is_paid %}
                                 <span class="badge bg-success">Paid</span>
-                            {% else %}
+                                {% else %}
                                 <span class="badge bg-warning text-dark">Unpaid</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if not bill.is_paid %}
-                            <form method="post">
-                                {% csrf_token %}
-                                <input type="hidden" name="action" value="mark_bill_paid">
-                                <input type="hidden" name="bill_id" value="{{ bill.id }}">
-                                <button type="submit" class="btn btn-success btn-sm"><i class="fas fa-money-check-alt"></i> Mark as Paid</button>
-                            </form>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr><td colspan="5" class="text-center">No outstanding bills.</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if not bill.is_paid %}
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="mark_bill_paid">
+                                    <input type="hidden" name="bill_id" value="{{ bill.id }}">
+                                    <button type="submit" class="btn btn-success btn-sm"><i class="fas fa-money-check-alt"></i> Mark as Paid</button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="text-center">No outstanding bills.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- OTC Sales Amount Modal -->
 <div class="modal fade" id="otcSalesAmountModal" tabindex="-1" aria-labelledby="otcSalesAmountModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -278,7 +321,6 @@
 </style>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <style>
     .btn-gradient-primary {
         transition: box-shadow 0.2s;
@@ -286,5 +328,80 @@
     .btn-gradient-primary:active {
         box-shadow: 0 0 0 0.2rem #1976d2;
     }
+    /* Add rotate transform for chevron icon */
+    .btn-link .fas.fa-chevron-down {
+        transition: transform 0.3s ease-in-out;
+    }
+    .btn-link:not(.collapsed) .fas.fa-chevron-down {
+        transform: rotate(180deg);
+    }
 </style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        fetchStockWarnings();
+        // Refresh warnings every 5 minutes
+        setInterval(fetchStockWarnings, 300000);
+    });
+
+    function fetchStockWarnings() {
+        fetch('{% url "api_stock_warnings" %}')
+            .then(response => response.json())
+            .then(data => {
+                const warningsDiv = document.getElementById('stock-warnings');
+                warningsDiv.innerHTML = ''; // Clear previous warnings
+
+                let hasWarnings = false;
+
+                if (data.out_of_stock && data.out_of_stock.length > 0) {
+                    hasWarnings = true;
+                    const outOfStockList = document.createElement('ul');
+                    outOfStockList.className = 'list-group mb-2';
+                    data.out_of_stock.forEach(drug => {
+                        const listItem = document.createElement('li');
+                        listItem.className = 'list-group-item list-group-item-danger';
+                        listItem.innerHTML = `<i class="fas fa-times-circle"></i> <strong>${drug.name}</strong> is out of stock.`;
+                        outOfStockList.appendChild(listItem);
+                    });
+                    warningsDiv.appendChild(outOfStockList);
+                }
+
+                if (data.low_stock && data.low_stock.length > 0) {
+                    hasWarnings = true;
+                    const lowStockList = document.createElement('ul');
+                    lowStockList.className = 'list-group mb-2';
+                    data.low_stock.forEach(drug => {
+                        const listItem = document.createElement('li');
+                        listItem.className = 'list-group-item list-group-item-warning';
+                        listItem.innerHTML = `<i class="fas fa-exclamation-triangle"></i> <strong>${drug.name}</strong> stock is low (${drug.quantity} remaining).`;
+                        lowStockList.appendChild(listItem);
+                    });
+                    warningsDiv.appendChild(lowStockList);
+                }
+
+                if (data.expiring_soon && data.expiring_soon.length > 0) {
+                    hasWarnings = true;
+                    const expiringSoonList = document.createElement('ul');
+                    expiringSoonList.className = 'list-group mb-2';
+                    data.expiring_soon.forEach(drug => {
+                        const listItem = document.createElement('li');
+                        listItem.className = 'list-group-item list-group-item-info';
+                        listItem.innerHTML = `<i class="fas fa-calendar-times"></i> <strong>${drug.name}</strong> is expiring soon (${drug.expiry_date}).`;
+                        expiringSoonList.appendChild(listItem);
+                    });
+                    warningsDiv.appendChild(expiringSoonList);
+                }
+
+                if (!hasWarnings) {
+                    warningsDiv.innerHTML = '<p class="alert alert-success"><i class="fas fa-check-circle"></i> No stock warnings at the moment. All good!</p>';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching stock warnings:', error);
+                document.getElementById('stock-warnings').innerHTML = '<p class="alert alert-danger">Failed to load stock warnings.</p>';
+            });
+    }
+</script>
 {% endblock %}
