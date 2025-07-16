@@ -2,6 +2,9 @@ from django.urls import path
 
 from . import views
 from patients.views import analytics_dashboard
+from .views import (
+    drug_list_and_alerts 
+)
 
 urlpatterns = [
     path('drugs/', views.all_drugs, name='all_drugs'),
@@ -28,6 +31,7 @@ urlpatterns = [
 
     # New URL for Inventory Reconciliation
     path('pharmacy/reconciliation/', views.inventory_reconciliation, name='inventory_reconciliation'),
-     path('api/stock_warnings/', views.get_stock_warnings, name='api_stock_warnings'),
+    path('api/stock_warnings/', views.get_stock_warnings, name='api_stock_warnings'),
+    path('drugs/alerts/', drug_list_and_alerts, name='drug_list_and_alerts'),
   
 ]
